@@ -1,24 +1,52 @@
-import logo from './logo.svg';
-import './App.css';
+// src/App.js
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Rules from "./pages/Rules";
+import Play from "./pages/play/Play";
+import PlayLayout from "./pages/play/PlayLayout";
+import Bots from "./pages/play/play-mode/Bots";
+import RandomUser from "./pages/play/play-mode/RandomUser";
+import PrivateRooms from "./pages/play/play-mode/PrivateRooms";
+import Ranking from "./pages/Ranking";
+import Navbar from "./components/Navbar";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Navbar /> {/* 👈 Navbar arriba de todas las rutas */}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/rules" element={<Rules />} />
+        <Route path="/play" element={<Play />} />
+        <Route path="/play-mode" element={<PlayLayout />}>
+          <Route
+            index
+            element={
+              <div className="middle-buttons">
+                <Link to="/play-mode/bots">
+                  <button className="button">Battleship Bot</button>
+                </Link>
+                <Link to="/play-mode/randomuser">
+                  <button className="button">Random user</button>
+                </Link>
+                <Link to="/play-mode/privaterooms">
+                  <button className="button">Private rooms</button>
+                </Link>
+              </div>
+            }
+          />
+          <Route path="bots" element={<Bots />} />
+          <Route path="randomuser" element={<RandomUser />} />
+          <Route path="privaterooms" element={<PrivateRooms />} />
+        </Route>
+        <Route path="/ranking" element={<Ranking />} />
+      </Routes>
+    </Router>
   );
 }
 
