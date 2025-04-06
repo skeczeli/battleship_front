@@ -5,12 +5,18 @@
   gap: 20px; /* Espacio entre las secciones */
 }
 
-.top-buttons {
+.navbar {
   display: flex;
-  justify-content: flex-end;
-  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
-  padding-right: 20px;
+  padding: 10px;
+}
+
+.navbar-left,
+.navbar-right {
+  display: flex;
+  gap: 10px;
 }
 
 .topper-button {

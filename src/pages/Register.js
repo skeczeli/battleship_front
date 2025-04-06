@@ -65,16 +65,8 @@ function Register() {
 
   return (
     <div className="container">
-      <div className="top-buttons">
-        <Link to="/">
-          <button className="button">Home</button>
-        </Link>
-        <Link to="/login">
-          <button className="button">Log in</button>
-        </Link>
-      </div>
 
-      <h1>Registro</h1>
+      <h1>Register</h1>
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-group">
           <label htmlFor="username">Username:</label>

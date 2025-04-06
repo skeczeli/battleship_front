@@ -21,13 +21,16 @@ function Navbar() {
   const location = useLocation();
 
   return (
-    <div className="top-buttons">
+    <header className="navbar">
+    <div className="navbar-left">
       {location.pathname !== "/" && (
         <Link to="/">
           <button className="button">Home</button>
         </Link>
       )}
+    </div>
 
+    <div className="navbar-right">
       {user ? (
         <>
           <Link to="/account">
@@ -39,30 +42,20 @@ function Navbar() {
         </>
       ) : (
         <>
-          {location.pathname === "/login" && (
-            <Link to="/register">
-              <button className="button">Register</button>
-            </Link>
-          )}
-          {location.pathname === "/register" && (
-            <Link to="/login">
-              <button className="button">Log in</button>
-            </Link>
-          )}
-          {location.pathname !== "/play" && (
-            <Link to="/play">
-              <button className="button">Play modes</button>
-            </Link> //esto solo en playLayout
-          )}
-          {location.pathname !== "/login" &&
-            location.pathname !== "/register" && (
-              <Link to="/login">
-                <button className="button">Log in</button>
-              </Link>
-            )}
+        {location.pathname !== "/login" && (
+          <Link to="/login">
+            <button className="button">Log in</button>
+          </Link>
+        )}
+        {location.pathname !== "/register" && (
+          <Link to="/register">
+            <button className="button">Register</button>
+          </Link>
+        )}
         </>
       )}
     </div>
+  </header>
   );
 }
 

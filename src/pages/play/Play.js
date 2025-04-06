@@ -6,11 +6,6 @@ import "../../styles/main.css";
 function Play() {
   return (
     <div className="container">
-      <div className="topper-button">
-        <Link to="/">
-          <button className="button">Home</button>
-        </Link>
-      </div>
       <div className="middle-message">Choose your opponent</div>
       <div className="middle-buttons">
         <Link to="/play-mode/bots">
