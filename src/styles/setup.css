@@ -38,6 +38,62 @@
   font-weight: bold;
 }
 
+/* Contenedor de barcos */
+.ship-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Fila para cada barco */
+.ship-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Elemento de barco */
+.ship-item {
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-grow: 1;
+}
+
+.ship-item.selected {
+  background-color: #e2f0ff;
+  font-weight: bold;
+}
+
+.ship-item.placed {
+  opacity: 0.7;
+}
+
+/* Botón de eliminar */
+.remove-ship-btn {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.remove-ship-btn:hover {
+  background-color: #ff4757;
+}
+
+/* Estilo para el nombre del barco */
+.ship-name {
+  flex-grow: 1;
+}
+
 /* Estilos para el tablero */
 .board {
   display: flex;

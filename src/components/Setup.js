@@ -15,24 +15,46 @@ const ships = [
  * Componente para la lista de barcos.
  * Permite seleccionar un barco y resaltar el seleccionado.
  */
-function ShipList({ ships, selectedShip, onSelectShip, placedShips }) {
+function ShipList({
+  ships,
+  selectedShip,
+  onSelectShip,
+  placedShips,
+  onRemoveShip,
+}) {
   return (
     <div className="ship-list">
       <h3>Barcos</h3>
-      <ul>
+      <div className="ship-items-container">
         {ships.map((ship) => (
-          <li
-            key={ship.id}
-            onClick={() => onSelectShip(ship)}
-            className={`
-              ${selectedShip && selectedShip.id === ship.id ? "selected" : ""}
-              ${placedShips.includes(ship.id) ? "placed" : ""}
-            `}
-          >
-            {ship.name} ({ship.size}){placedShips.includes(ship.id) && " ✓"}
-          </li>
+          <div key={ship.id} className="ship-row">
+            <div
+              onClick={() => onSelectShip(ship)}
+              className={`
+                  ship-item
+                  ${
+                    selectedShip && selectedShip.id === ship.id
+                      ? "selected"
+                      : ""
+                  }
+                  ${placedShips.includes(ship.id) ? "placed" : ""}
+                `}
+            >
+              {ship.name} ({ship.size}){placedShips.includes(ship.id) && " ✓"}
+            </div>
+
+            {placedShips.includes(ship.id) && (
+              <button
+                className="remove-ship-btn"
+                onClick={() => onRemoveShip(ship.id)}
+                title="Eliminar barco"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -123,10 +145,9 @@ function Setup() {
   // Inicializa el tablero 10x10 (null = vacío, string = ID del barco)
   const initialBoard = Array.from({ length: 10 }, () => Array(10).fill(null));
 
-  
   // Cargar datos guardados en localStorage
   const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
-  
+
   const [board, setBoard] = useState(() => {
     if (
       savedState.board &&
@@ -138,18 +159,17 @@ function Setup() {
     }
     return initialBoard;
   });
-  
+
   const [placedShips, setPlacedShips] = useState(() => {
     return Array.isArray(savedState.placedShips) ? savedState.placedShips : [];
   });
-  
+
   const [orientation, setOrientation] = useState(() => {
     return savedState.orientation === "vertical" ? "vertical" : "horizontal";
   });
-  
+
   const [selectedShip, setSelectedShip] = useState(null);
   const [hoveredCell, setHoveredCell] = useState(null);
-  
 
   // Calcula las celdas que serían ocupadas por el barco en la posición actual
   const getShipCells = (row, col, ship, shipOrientation) => {
@@ -205,6 +225,24 @@ function Setup() {
     }
   };
 
+  // Función para quitar un barco del tablero
+  const handleRemoveShip = (shipId) => {
+    // Quitar el barco de la lista de barcos colocados
+    const newPlacedShips = placedShips.filter((id) => id !== shipId);
+    setPlacedShips(newPlacedShips);
+
+    // Eliminar el barco del tablero
+    const newBoard = board.map((row) =>
+      row.map((cell) => (cell === shipId ? null : cell))
+    );
+    setBoard(newBoard);
+
+    // Si este era el barco seleccionado, lo deseleccionamos
+    if (selectedShip && selectedShip.id === shipId) {
+      setSelectedShip(null);
+    }
+  };
+
   // Función para cambiar la orientación del barco
   const toggleOrientation = () => {
     setOrientation(orientation === "horizontal" ? "vertical" : "horizontal");
@@ -241,32 +279,25 @@ function Setup() {
     setHoveredCell(null);
   };
 
-// Permite volver a seleccionar un barco ya colocado
-const handleSelectShip = (ship) => {
-  // Si ya estaba colocado, lo quitamos del tablero
-  if (placedShips.includes(ship.id)) {
-    const newBoard = board.map((row) =>
-      row.map((cell) => (cell === ship.id ? null : cell))
-    );
-    setBoard(newBoard);
-
-    // Quitamos el barco de la lista de colocados
-    setPlacedShips(placedShips.filter((id) => id !== ship.id));
-  }
-
-  // Lo seleccionamos para volver a colocarlo
-  setSelectedShip(ship);
-};
-
-// Guardar automáticamente en localStorage cuando cambian el tablero o los barcos
-React.useEffect(() => {
-  const data = {
-    board,
-    placedShips,
-    orientation,
+  const handleSelectShip = (ship) => {
+    // Si el barco ya está seleccionado, lo deseleccionamos
+    if (selectedShip && selectedShip.id === ship.id) {
+      setSelectedShip(null); // Deseleccionar el barco
+    } else {
+      // Si no está seleccionado o es otro barco diferente, lo seleccionamos
+      setSelectedShip(ship);
+    }
   };
-  localStorage.setItem("setupState", JSON.stringify(data));
-}, [board, placedShips, orientation]);
+
+  // Guardar automáticamente en localStorage cuando cambian el tablero o los barcos
+  React.useEffect(() => {
+    const data = {
+      board,
+      placedShips,
+      orientation,
+    };
+    localStorage.setItem("setupState", JSON.stringify(data));
+  }, [board, placedShips, orientation]);
 
   return (
     <div className="setup-container">
@@ -276,6 +307,7 @@ React.useEffect(() => {
           selectedShip={selectedShip}
           onSelectShip={handleSelectShip}
           placedShips={placedShips}
+          onRemoveShip={handleRemoveShip}
         />
         <div className="options">
           <button onClick={toggleOrientation}>
