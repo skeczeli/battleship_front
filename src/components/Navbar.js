@@ -22,40 +22,41 @@ function Navbar() {
 
   return (
     <header className="navbar">
-    <div className="navbar-left">
-      {location.pathname !== "/" && (
-        <Link to="/">
-          <button className="button">Home</button>
-        </Link>
-      )}
-    </div>
+      <div className="navbar-left">
+        {location.pathname !== "/" && (
+          <Link to="/">
+            <button className="button">Home</button>
+          </Link>
+        )}
+      </div>
 
-    <div className="navbar-right">
-      {user ? (
-        <>
-          <Link to="/profile/:username">
-            <button className="button">Perfil ({user.username})</button>
-          </Link>
-          <button className="button" onClick={handleLogout}>
-            Log out
-          </button>
-        </>
-      ) : (
-        <>
-        {location.pathname !== "/login" && (
-          <Link to="/login">
-            <button className="button">Log in</button>
-          </Link>
+      <div className="navbar-right">
+        {user ? (
+          <>
+            <Link to={`/profile/${user.username}`}>
+              <button className="button">Perfil ({user.username})</button>
+            </Link>
+
+            <button className="button" onClick={handleLogout}>
+              Log out
+            </button>
+          </>
+        ) : (
+          <>
+            {location.pathname !== "/login" && (
+              <Link to="/login">
+                <button className="button">Log in</button>
+              </Link>
+            )}
+            {location.pathname !== "/register" && (
+              <Link to="/register">
+                <button className="button">Register</button>
+              </Link>
+            )}
+          </>
         )}
-        {location.pathname !== "/register" && (
-          <Link to="/register">
-            <button className="button">Register</button>
-          </Link>
-        )}
-        </>
-      )}
-    </div>
-  </header>
+      </div>
+    </header>
   );
 }
 
