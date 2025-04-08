@@ -59,10 +59,40 @@
   transition: background-color 0.2s;
 }
 
-.grid-cell:hover {
-  background-color: #f0f0f0;
+.cell-highlighted {
+  background-color: rgba(0, 255, 0, 0.3);
 }
 
-.cell-selected {
-  background-color: #aaf;
+.ship-portaaviones {
+  background-color: #ff5733;
+}
+.ship-acorazado {
+  background-color: #33a2ff;
+}
+.ship-submarino {
+  background-color: rgb(255, 196, 0);
+}
+.ship-destructor {
+  background-color: #ff33a2;
+}
+.ship-lancha {
+  background-color: #a233ff;
+}
+
+.placed {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.placement-error {
+  color: red;
+  margin-top: 10px;
+}
+
+.options {
+  margin-top: 20px;
+}
+
+.options button {
+  margin: 5px;
 }
