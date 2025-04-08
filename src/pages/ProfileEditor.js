@@ -1,52 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import '../styles/register.css';
+import React, { useState, useEffect } from "react";
+import "../styles/register.css";
 
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
-    username: '',
-    nickname: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    username: "",
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user'));
-    if (userData) setUser(userData);
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData) {
+      setUser(userData);
+      setFormData((prev) => ({
+        ...prev,
+        name: userData.name || "",
+        email: userData.email || "",
+        username: userData.username || "",
+      }));
+    }
   }, []);
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    setError('');
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password && formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
     const updates = {};
     Object.keys(formData).forEach((key) => {
-      if (key !== 'confirmPassword' && formData[key]) {
+      if (key !== "confirmPassword" && formData[key]) {
         updates[key] = formData[key];
       }
     });
 
     if (Object.keys(updates).length === 0) {
-      setError('No cambiaste nada.');
+      setError("No cambiaste nada.");
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/users/update', {
-        method: 'PUT',
+      const response = await fetch("http://localhost:8080/api/users/update", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${user.token}`,
         },
         body: JSON.stringify(updates),
@@ -56,20 +64,29 @@ const UserProfile = () => {
         const updatedUser = await response.json();
         const newUserData = { ...user, ...updatedUser };
         setUser(newUserData);
-        localStorage.setItem('user', JSON.stringify(newUserData));
-        alert('Datos actualizados correctamente.');
-        setFormData({ username: '', nickname: '', email: '', password: '', confirmPassword: '' });
-        setError('');
+        localStorage.setItem("user", JSON.stringify(newUserData));
+        alert("Datos actualizados correctamente.");
+        setFormData({
+          username: "",
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setError("");
       } else {
-        setError('Error al actualizar los datos.');
+        setError("Error al actualizar los datos.");
       }
     } catch (err) {
       console.error(err);
-      setError('Error de red.');
+      setError("Error de red.");
     }
   };
 
-  if (!user) return <p style={{ textAlign: 'center' }}>Iniciá sesión para ver tu perfil.</p>; // --------------------------------------
+  if (!user)
+    return (
+      <p style={{ textAlign: "center" }}>Iniciá sesión para ver tu perfil.</p>
+    ); // --------------------------------------
 
   return (
     <div className="profile-container">
@@ -88,9 +105,9 @@ const UserProfile = () => {
         <label>
           Apodo:
           <input
-            name="nickname"
-            placeholder={user.nickname || 'Sin apodo'}
-            value={formData.nickname}
+            name="name"
+            placeholder={user.name || "Sin apodo"}
+            value={formData.name}
             onChange={handleChange}
           />
         </label>

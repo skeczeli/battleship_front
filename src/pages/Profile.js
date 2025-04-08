@@ -44,7 +44,7 @@ const ProfilePage = () => {
     <div className="profile-container">
       <h2>Perfil de {profile.username}</h2>
       <p>
-        <strong>Apodo:</strong> {profile.nickname || "Sin apodo"}
+        <strong>Apodo:</strong> {profile.name || "Sin apodo"}
       </p>
       <p>
         <strong>Partidas ganadas:</strong> {profile.wins}
