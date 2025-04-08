@@ -39,27 +39,33 @@ const ProfilePage = () => {
   
     if (!usernameInput || !passwordInput) return;
   
-    const res = await fetch("http://localhost:8080/api/delete-account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: usernameInput,
-        password: passwordInput,
-      }),
-    });
+    try {
+      const res = await fetch("http://localhost:8080/api/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: usernameInput,
+          password: passwordInput,
+        }),
+      });
   
-    const result = await res.json();
+      if (!res.ok) {
+        const errorData = await res.text();
+        alert(errorData || "No se pudo eliminar la cuenta.");
+        return;
+      }
   
-    if (result.success) {
       alert("Cuenta eliminada correctamente.");
-      localStorage.removeItem("user");
-      window.location.href = "/";
-    } else {
-      alert(result.message || "No se pudo eliminar la cuenta.");
+      localStorage.removeItem("user"); // 🔓 cerrás sesión
+      window.location.href = "/"; // 🏠 redirige al home
+    } catch (error) {
+      alert("Error al conectar con el servidor.");
+      console.error(error);
     }
-  };
+  };  
+  
 
   if (error) return <p>{error}</p>;
   if (!profile) return <p>Cargando perfil...</p>;
