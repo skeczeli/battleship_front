@@ -26,7 +26,12 @@ function Login() {
 
       if (response.ok) {
         const user = await response.json();
-        localStorage.setItem("user", JSON.stringify(user));
+        const token = response.headers
+          .get("Authorization")
+          ?.replace("Bearer ", "");
+        const fullUser = { ...user, token };
+
+        localStorage.setItem("user", JSON.stringify(fullUser));
         window.location.href = "/";
       } else {
         const error = await response.text();

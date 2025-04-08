@@ -31,6 +31,11 @@ const UserProfile = () => {
   };
 
   const handleSubmit = async (e) => {
+    if (!user?.token) {
+      setError("Sesión inválida. Por favor, iniciá sesión nuevamente.");
+      return;
+    }
+
     e.preventDefault();
 
     if (formData.password && formData.password !== formData.confirmPassword) {
@@ -93,15 +98,7 @@ const UserProfile = () => {
       <h2>Editar Perfil</h2>
       {error && <p className="error-message">{error}</p>}
       <form className="profile-form" onSubmit={handleSubmit}>
-        <label>
-          Usuario:
-          <input
-            name="username"
-            placeholder={user.username}
-            value={formData.username}
-            onChange={handleChange}
-          />
-        </label>
+        <label>Usuario: {user.username}</label>
         <label>
           Apodo:
           <input
