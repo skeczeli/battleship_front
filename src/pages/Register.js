@@ -6,7 +6,7 @@ import "../styles/register.css";
 function Register() {
   const [formData, setFormData] = useState({
     username: "",
-    nickname: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -31,7 +31,7 @@ function Register() {
     const userDTO = {
       username: formData.username,
       password: formData.password,
-      name: formData.nickname, // o como corresponda
+      name: formData.name, // o como corresponda
       email: formData.email,
     };
 
@@ -54,6 +54,8 @@ function Register() {
 
         // Redirigir (por ejemplo, a /dashboard o donde tengas la parte logueada)
         window.location.href = "/"; // o usar navigate si usás react-router v6
+      } else if (response.status === 409) {
+        alert("Ese nombre de usuario ya está en uso. Elegí otro.");
       } else {
         alert("Error al registrar: " + result);
       }
@@ -65,7 +67,6 @@ function Register() {
 
   return (
     <div className="container">
-
       <h1>Register</h1>
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-group">
@@ -80,12 +81,12 @@ function Register() {
           />
         </div>
         <div className="form-group">
-          <label htmlFor="nickname">Nickname:</label>
+          <label htmlFor="name">Name:</label>
           <input
             type="text"
-            id="nickname"
-            name="nickname"
-            value={formData.nickname}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             required
           />
