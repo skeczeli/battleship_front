@@ -33,6 +33,34 @@ const ProfilePage = () => {
     alert("Ahora estás siguiendo a este usuario.");
   };
 
+  const handleDelete = async () => {
+    const usernameInput = prompt("Escribí tu nombre de usuario:");
+    const passwordInput = prompt("Escribí tu contraseña:");
+  
+    if (!usernameInput || !passwordInput) return;
+  
+    const res = await fetch("http://localhost:8080/api/delete-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: usernameInput,
+        password: passwordInput,
+      }),
+    });
+  
+    const result = await res.json();
+  
+    if (result.success) {
+      alert("Cuenta eliminada correctamente.");
+      localStorage.removeItem("user");
+      window.location.href = "/";
+    } else {
+      alert(result.message || "No se pudo eliminar la cuenta.");
+    }
+  };
+
   if (error) return <p>{error}</p>;
   if (!profile) return <p>Cargando perfil...</p>;
 
@@ -57,9 +85,10 @@ const ProfilePage = () => {
       </p>
 
       {isCurrentUser ? (
-        <button onClick={() => (window.location.href = "/editprofile")}>
+        <><button onClick={() => (window.location.href = "/editprofile")}>
           Editar perfil
         </button>
+        <button onClick={handleDelete}>Eliminar cuenta</button></>
       ) : (
         <button onClick={handleFollow}>Seguir</button>
       )}
