@@ -122,11 +122,34 @@ function Board({
 function Setup() {
   // Inicializa el tablero 10x10 (null = vacío, string = ID del barco)
   const initialBoard = Array.from({ length: 10 }, () => Array(10).fill(null));
-  const [board, setBoard] = useState(initialBoard);
+
+  
+  // Cargar datos guardados en localStorage
+  const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
+  
+  const [board, setBoard] = useState(() => {
+    if (
+      savedState.board &&
+      Array.isArray(savedState.board) &&
+      savedState.board.length === 10 &&
+      savedState.board.every((row) => Array.isArray(row) && row.length === 10)
+    ) {
+      return savedState.board;
+    }
+    return initialBoard;
+  });
+  
+  const [placedShips, setPlacedShips] = useState(() => {
+    return Array.isArray(savedState.placedShips) ? savedState.placedShips : [];
+  });
+  
+  const [orientation, setOrientation] = useState(() => {
+    return savedState.orientation === "vertical" ? "vertical" : "horizontal";
+  });
+  
   const [selectedShip, setSelectedShip] = useState(null);
-  const [orientation, setOrientation] = useState("horizontal");
-  const [placedShips, setPlacedShips] = useState([]);
   const [hoveredCell, setHoveredCell] = useState(null);
+  
 
   // Calcula las celdas que serían ocupadas por el barco en la posición actual
   const getShipCells = (row, col, ship, shipOrientation) => {
@@ -218,13 +241,40 @@ function Setup() {
     setHoveredCell(null);
   };
 
+// Permite volver a seleccionar un barco ya colocado
+const handleSelectShip = (ship) => {
+  // Si ya estaba colocado, lo quitamos del tablero
+  if (placedShips.includes(ship.id)) {
+    const newBoard = board.map((row) =>
+      row.map((cell) => (cell === ship.id ? null : cell))
+    );
+    setBoard(newBoard);
+
+    // Quitamos el barco de la lista de colocados
+    setPlacedShips(placedShips.filter((id) => id !== ship.id));
+  }
+
+  // Lo seleccionamos para volver a colocarlo
+  setSelectedShip(ship);
+};
+
+// Guardar automáticamente en localStorage cuando cambian el tablero o los barcos
+React.useEffect(() => {
+  const data = {
+    board,
+    placedShips,
+    orientation,
+  };
+  localStorage.setItem("setupState", JSON.stringify(data));
+}, [board, placedShips, orientation]);
+
   return (
     <div className="setup-container">
       <div className="controls">
         <ShipList
           ships={ships}
           selectedShip={selectedShip}
-          onSelectShip={setSelectedShip}
+          onSelectShip={handleSelectShip}
           placedShips={placedShips}
         />
         <div className="options">
