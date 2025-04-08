@@ -12,6 +12,9 @@ import RandomUser from "./pages/play/play-mode/RandomUser";
 import PrivateRooms from "./pages/play/play-mode/PrivateRooms";
 import Ranking from "./pages/Ranking";
 import Navbar from "./components/Navbar";
+import ProfileEditor from './pages/ProfileEditor';
+import Profile from './pages/Profile';
+
 
 function App() {
   return (
@@ -20,6 +23,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/editprofile" element={<ProfileEditor />} />
+        <Route path="/profile/:username" element={<Profile />} />
         <Route path="/register" element={<Register />} />
         <Route path="/rules" element={<Rules />} />
         <Route path="/play" element={<Play />} />

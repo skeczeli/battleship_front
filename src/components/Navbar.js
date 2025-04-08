@@ -33,8 +33,8 @@ function Navbar() {
     <div className="navbar-right">
       {user ? (
         <>
-          <Link to="/account">
-            <button className="button">{user.username}</button>
+          <Link to="/profile/:username">
+            <button className="button">Perfil ({user.username})</button>
           </Link>
           <button className="button" onClick={handleLogout}>
             Log out
