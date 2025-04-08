@@ -91,10 +91,15 @@ const ProfilePage = () => {
       </p>
 
       {isCurrentUser ? (
-        <><button onClick={() => (window.location.href = "/editprofile")}>
-          Editar perfil
-        </button>
-        <button onClick={handleDelete}>Eliminar cuenta</button></>
+  <>
+  <button className="form-button" onClick={() => (window.location.href = "/editprofile")}>
+    Editar perfil
+  </button>
+  <button className="form-button delete-button" onClick={handleDelete}>
+    Eliminar cuenta
+  </button>
+</>
+
       ) : (
         <button onClick={handleFollow}>Seguir</button>
       )}

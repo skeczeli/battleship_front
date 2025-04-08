@@ -127,3 +127,29 @@ form p a:hover {
   text-align: center;
   margin-bottom: 1rem;
 }
+
+.form-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  margin: 10px 5px;
+  margin-left: 0px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.form-button:hover {
+  background-color: #45a049;
+}
+
+.delete-button {
+  background-color: #e53935;
+  margin-left: 10px;
+}
+
+.delete-button:hover {
+  background-color: #c62828;
+}
