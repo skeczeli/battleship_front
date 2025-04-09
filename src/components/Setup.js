@@ -1,6 +1,7 @@
 // Setup.js
 import React, { useState } from "react";
 import "../styles/setup.css";
+import Board from "./Board";
 
 // Definición de barcos
 const ships = [
@@ -60,88 +61,9 @@ function ShipList({
 }
 
 /**
- * Componente que representa cada celda del tablero.
- */
-function GridCell({
-  row,
-  col,
-  value,
-  onClick,
-  isHighlighted,
-  isHovered,
-  onMouseEnter,
-  onMouseLeave,
-}) {
-  // Determinamos las clases para la celda
-  let cellClass = "grid-cell";
-
-  if (value) {
-    // Si la celda ya tiene un barco, mostramos ese color
-    cellClass += ` ship-${value}`;
-  } else {
-    // Si no tiene un barco, aplicamos efectos de hover/highlight solo si no está ocupada
-    if (isHovered) {
-      cellClass += " cell-hovered"; // Celda sobre la que está el cursor
-    }
-    if (isHighlighted) {
-      cellClass += " cell-highlighted"; // Celdas que formarían parte del barco
-    }
-  }
-
-  return (
-    <div
-      className={cellClass}
-      onClick={() => onClick(row, col)}
-      onMouseEnter={() => onMouseEnter(row, col)}
-      onMouseLeave={onMouseLeave}
-    />
-  );
-}
-
-/**
- * Componente que muestra el tablero 10x10.
- */
-function Board({
-  board,
-  onCellClick,
-  highlightedCells,
-  onCellHover,
-  hoveredCell,
-  onBoardLeave,
-}) {
-  return (
-    <div className="board">
-      {board.map((rowArr, rowIdx) => (
-        <div key={rowIdx} className="board-row">
-          {rowArr.map((cell, colIdx) => (
-            <GridCell
-              key={`${rowIdx}-${colIdx}`}
-              row={rowIdx}
-              col={colIdx}
-              value={cell}
-              onClick={onCellClick}
-              isHighlighted={highlightedCells.some(
-                ([r, c]) => r === rowIdx && c === colIdx
-              )}
-              isHovered={
-                hoveredCell &&
-                hoveredCell[0] === rowIdx &&
-                hoveredCell[1] === colIdx
-              }
-              onMouseEnter={onCellHover}
-              onMouseLeave={() => {}} // No necesitamos un handler específico para cada celda
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
  * Componente principal del setup de Battleship.
  */
-function Setup() {
+function Setup({ onConfirm }) {
   // Inicializa el tablero 10x10 (null = vacío, string = ID del barco)
   const initialBoard = Array.from({ length: 10 }, () => Array(10).fill(null));
 
@@ -289,6 +211,10 @@ function Setup() {
     }
   };
 
+  const handleConfirm = () => {
+    onConfirm(board, placedShips);
+  };
+
   // Guardar automáticamente en localStorage cuando cambian el tablero o los barcos
   React.useEffect(() => {
     const data = {
@@ -315,6 +241,7 @@ function Setup() {
             {orientation === "horizontal" ? "Horizontal" : "Vertical"}
           </button>
           <button onClick={resetGame}>Reiniciar</button>
+          <button onClick={handleConfirm}>Confirmar</button>
         </div>
       </div>
 

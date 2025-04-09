@@ -8,13 +8,13 @@ function Play() {
     <div className="container">
       <div className="middle-message">Choose your opponent</div>
       <div className="middle-buttons">
-        <Link to="/play-mode/bots">
+        <Link to="/play-mode/bots/setup">
           <button className="button">Battleship Bot</button>
         </Link>
-        <Link to="/play-mode/randomuser">
+        <Link to="/play-mode/random/setup">
           <button className="button">Random user</button>
         </Link>
-        <Link to="/play-mode/privaterooms">
+        <Link to="/play-mode/private/setup">
           <button className="button">Private rooms</button>
         </Link>
       </div>
