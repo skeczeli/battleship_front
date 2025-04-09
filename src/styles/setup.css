@@ -1,8 +1,14 @@
-/* Setup.css */
+/* styles/setup.css */
 .setup-container {
   display: flex;
   gap: 20px;
   padding: 20px;
+}
+
+/* Controls Panel */
+.controls {
+  flex: 1;
+  max-width: 250px;
 }
 
 /* Estilos para la lista de barcos */
@@ -13,29 +19,6 @@
 .ship-list h3 {
   margin-bottom: 10px;
   text-align: left;
-}
-
-.ship-list ul {
-  list-style: none;
-  padding: 0;
-}
-
-.ship-list li {
-  cursor: pointer;
-  padding: 10px;
-  margin-bottom: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.ship-list li:hover {
-  background-color: #f5f5f5;
-}
-
-.ship-list li.selected {
-  background-color: #ddd;
-  font-weight: bold;
 }
 
 /* Contenedor de barcos */
@@ -54,19 +37,42 @@
 
 /* Elemento de barco */
 .ship-item {
-  padding: 5px 10px;
+  padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
   flex-grow: 1;
+  transition: all 0.2s;
 }
 
 .ship-item.selected {
   background-color: #e2f0ff;
   font-weight: bold;
+  transform: scale(1.02);
 }
 
 .ship-item.placed {
   opacity: 0.7;
+}
+
+/* Colores específicos para cada tipo de barco en la lista */
+.ship-item[data-ship-id="portaaviones"] {
+  border-left: 4px solid #ff5733;
+}
+
+.ship-item[data-ship-id="acorazado"] {
+  border-left: 4px solid #33a2ff;
+}
+
+.ship-item[data-ship-id="submarino"] {
+  border-left: 4px solid rgb(255, 196, 0);
+}
+
+.ship-item[data-ship-id="destructor"] {
+  border-left: 4px solid #ff33a2;
+}
+
+.ship-item[data-ship-id="lancha"] {
+  border-left: 4px solid #a233ff;
 }
 
 /* Botón de eliminar */
@@ -83,77 +89,17 @@
   cursor: pointer;
   margin-left: 8px;
   font-size: 12px;
+  transition: background-color 0.2s;
 }
 
 .remove-ship-btn:hover {
   background-color: #ff4757;
 }
 
-/* Estilo para el nombre del barco */
-.ship-name {
-  flex-grow: 1;
+/* Estilos para el panel de opciones */
+.options {
+  margin-top: 20px;
 }
-
-/* Estilos para el tablero */
-.board {
-  display: flex;
-  flex-direction: column;
-}
-
-.board-row {
-  display: flex;
-}
-
-.board-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-right: 220px;
-}
-
-.grid-cell {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.cell-highlighted {
-  background-color: rgba(0, 255, 0, 0.3);
-}
-
-.ship-portaaviones {
-  background-color: #ff5733;
-}
-.ship-acorazado {
-  background-color: #33a2ff;
-}
-.ship-submarino {
-  background-color: rgb(255, 196, 0);
-}
-.ship-destructor {
-  background-color: #ff33a2;
-}
-.ship-lancha {
-  background-color: #a233ff;
-}
-
-.placed {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.placement-error {
-  color: red;
-  margin-top: 10px;
-}
-
-/* setup.css */
 
 .options button {
   background-color: #0077cc;
@@ -178,7 +124,26 @@
   background-color: #004f8a;
 }
 
-.controls {
+/* Estilos para el contenedor del tablero */
+.board-container {
   flex: 1;
-  max-width: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-wrapper {
+  position: relative;
+  margin: 10px 0;
+}
+
+/* Mensaje de error de colocación */
+.placement-error {
+  color: #e53e3e;
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #fff5f5;
+  border-radius: 4px;
+  border-left: 3px solid #e53e3e;
+  font-weight: bold;
 }
