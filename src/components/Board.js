@@ -44,10 +44,7 @@ function Board({
         data-state={
           cellContent === "hit" || cellContent === "miss" ? cellContent : null
         }
-      >
-        {/* Opcional: Mostrar el contenido de la celda para debugging */}
-        {/* {cellContent && <span className="cell-debug">{cellContent}</span>} */}
-      </div>
+      ></div>
     );
   };
 

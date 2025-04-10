@@ -36,7 +36,6 @@ function BotsGame() {
       >
         <div className="board-wrapper">
           <h4>Tu Tablero</h4>
-          {/* Renderizamos el tablero armado */}
           <Board
             board={boardSet}
             onCellClick={() => {}}
@@ -48,7 +47,6 @@ function BotsGame() {
         </div>
         <div className="board-wrapper">
           <h4>Tablero Enemigo</h4>
-          {/* Renderizamos el tablero en blanco */}
           <Board
             board={blankBoard}
             onCellClick={() => {}}
