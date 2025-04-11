@@ -213,6 +213,35 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     }
   }, [orientation, hoveredCell, updateHighlightedCells]);
 
+  // NUEVA FUNCIÓN: Manejar disparos al tablero
+  const handleShot = useCallback(
+    (row, col) => {
+      // Si ya se disparó a esa celda (hit o miss), no hacer nada
+      if (board[row][col] === "hit" || board[row][col] === "miss") {
+        return false;
+      }
+
+      // Clonar el tablero para actualizarlo
+      const newBoard = [...board.map((boardRow) => [...boardRow])];
+
+      // CAMBIAR PARA DINAMISMO (por ahora hit default)
+      const result = Math.random() < 0.5 ? "hit" : "miss"; // Simulación de hit/miss
+
+      newBoard[row][col] = result;
+
+      // Actualizar el tablero
+      setBoard(newBoard);
+
+      // Devolver las coordenadas y resultado para que el componente pueda mostrar mensajes
+      return {
+        row,
+        col,
+        result: result,
+      };
+    },
+    [board]
+  );
+
   return {
     board,
     setBoard,
@@ -230,6 +259,7 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     handleSelectShip,
     resetBoard,
     canPlaceAtCurrentPosition,
+    handleShot, // Exponemos la nueva función
   };
 };
 

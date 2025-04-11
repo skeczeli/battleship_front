@@ -1,10 +1,15 @@
-// Board.js
 import React from "react";
 import "../styles/board.css";
 
 /**
  * Componente de tablero de juego.
  * Renderiza una cuadrícula interactiva y maneja eventos de clic y hover.
+ * @param {Array} board - Estado del tablero
+ * @param {Function} onCellClick - Función a ejecutar al hacer clic en una celda
+ * @param {Array} highlightedCells - Celdas a destacar (para preview de colocación)
+ * @param {Function} onCellHover - Función a ejecutar al pasar el cursor sobre una celda
+ * @param {Function} onBoardLeave - Función a ejecutar cuando el cursor sale del tablero
+ * @param {boolean} isGameMode - Indica si estamos en modo juego para mostrar disparos
  */
 function Board({
   board,
@@ -12,6 +17,7 @@ function Board({
   highlightedCells = [],
   onCellHover,
   onBoardLeave,
+  isGameMode = false,
 }) {
   // Función para determinar si una celda está destacada (para preview)
   const isCellHighlighted = (row, col) => {
@@ -26,9 +32,19 @@ function Board({
     // Determinar la clase CSS
     let cellClass = "cell";
 
-    // Agregar clase específica según el tipo de barco
-    if (cellContent && typeof cellContent === "string") {
-      cellClass += ` ship-${cellContent}`;
+    // En modo juego, mostramos hits/misses diferente
+    if (isGameMode) {
+      if (cellContent === "hit" || cellContent === "miss") {
+        cellClass += ` ${cellContent}`;
+      } else if (cellContent && typeof cellContent === "string") {
+        // Mostramos barcos normalmente (en tablero propio)
+        cellClass += ` ship-${cellContent}`;
+      }
+    } else {
+      // En modo setup, solo mostramos barcos
+      if (cellContent && typeof cellContent === "string") {
+        cellClass += ` ship-${cellContent}`;
+      }
     }
 
     if (isHighlighted) {

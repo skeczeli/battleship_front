@@ -120,3 +120,36 @@
   bottom: 2px;
   right: 2px;
 }
+
+/* Añade estos estilos a tu archivo board.css */
+.cell.hit {
+  background-color: #ff5a5a;
+  position: relative;
+}
+
+.cell.hit::after {
+  content: "×";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #b30000;
+}
+
+.cell.miss {
+  background-color: #a9d4e9;
+  position: relative;
+}
+
+.cell.miss::after {
+  content: "•";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #005a80;
+}

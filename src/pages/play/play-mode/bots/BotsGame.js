@@ -1,16 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Board from "components/Board";
+import useBoard from "hooks/useBoard";
+import useTurnSystem from "hooks/useTurnSystem"; // Importamos el nuevo hook
 
 function BotsGame() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // La board armada proviene del estado pasado desde Setup (o BotsSetup)
-  const boardSet = state?.board;
+  // Usamos el hook useBoard para el tablero del jugador (solo visualización)
+  const playerBoardState = state?.board;
 
-  // Si no se recibió la board, le avisamos y ofrecemos volver a Setup
-  if (!boardSet) {
+  // Usamos otro hook useBoard para el tablero enemigo (para gestionar disparos)
+  const { board: enemyBoard, handleShot } = useBoard();
+
+  // Usamos el hook de sistema de turnos
+  const { currentTurn, nextTurn } = useTurnSystem();
+
+  // Estado para mensaje del juego
+  const [gameMessage, setGameMessage] = useState(
+    "Haz clic en el tablero enemigo para disparar"
+  );
+
+  // Si no se recibió la board del jugador, mostramos error
+  if (!playerBoardState) {
     return (
       <div>
         <p>
@@ -24,12 +37,64 @@ function BotsGame() {
     );
   }
 
-  // Generamos un tablero en blanco (10x10 con nulls)
-  const blankBoard = Array.from({ length: 10 }, () => Array(10).fill(null));
+  // Manejador para cuando el jugador dispara
+  const handlePlayerShot = (row, col) => {
+    // Verificar si es el turno del jugador
+    if (currentTurn !== "player") {
+      setGameMessage("No es tu turno para disparar.");
+      return;
+    }
+
+    // Usamos la función handleShot de useBoard
+    const shotResult = handleShot(row, col);
+
+    // Si el disparo fue válido, actualizamos el mensaje
+    if (shotResult) {
+      const coordLabel = `${String.fromCharCode(65 + shotResult.col)}${
+        shotResult.row + 1
+      }`;
+      let result;
+      if (shotResult.result === "hit") {
+        result = "¡Tocado!";
+      } else if (shotResult.result === "miss") {
+        result = "¡Agua!";
+      }
+      setGameMessage(
+        `Has disparado a ${coordLabel}. Resultado: ${result}. Turno del enemigo.`
+      );
+
+      // Cambiamos al turno del enemigo
+      nextTurn();
+    }
+  };
+
+  // Manejador para cuando el enemigo dispara (simulado por un botón)
+  const handleEnemyTurn = () => {
+    // Verificar si es el turno del enemigo
+    if (currentTurn !== "enemy") {
+      setGameMessage("No es el turno del enemigo.");
+      return;
+    }
+
+    // Simulamos un disparo del enemigo (esto lo expandirás luego con la IA)
+    setGameMessage("El enemigo ha disparado. Tu turno.");
+
+    // Cambiamos al turno del jugador
+    nextTurn();
+  };
 
   return (
     <div>
       <h3>Juego en modo Bots</h3>
+      <div className="game-status">
+        <p>{gameMessage}</p>
+        <p>Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}</p>
+
+        {/* Botón temporal para simular el turno del enemigo */}
+        {currentTurn === "enemy" && (
+          <button onClick={handleEnemyTurn}>Simular turno del enemigo</button>
+        )}
+      </div>
       <div
         className="boards-container"
         style={{ display: "flex", gap: "20px" }}
@@ -37,23 +102,23 @@ function BotsGame() {
         <div className="board-wrapper">
           <h4>Tu Tablero</h4>
           <Board
-            board={boardSet}
-            onCellClick={() => {}}
+            board={playerBoardState}
+            onCellClick={() => {}} // No se permite interacción con tu propio tablero
             highlightedCells={[]}
             onCellHover={() => {}}
-            hoveredCell={null}
             onBoardLeave={() => {}}
+            isGameMode={true}
           />
         </div>
         <div className="board-wrapper">
           <h4>Tablero Enemigo</h4>
           <Board
-            board={blankBoard}
-            onCellClick={() => {}}
+            board={enemyBoard}
+            onCellClick={handlePlayerShot}
             highlightedCells={[]}
             onCellHover={() => {}}
-            hoveredCell={null}
             onBoardLeave={() => {}}
+            isGameMode={true}
           />
         </div>
       </div>
