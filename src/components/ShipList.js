@@ -37,7 +37,10 @@ function ShipList({
             {placedShips.includes(ship.id) && (
               <button
                 className="remove-ship-btn"
-                onClick={() => onRemoveShip(ship.id)}
+                onClick={() => {
+                  onRemoveShip(ship.id);
+                  onSelectShip(ship);
+                }}
                 title="Eliminar barco"
               >
                 ✕

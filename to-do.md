@@ -1,7 +1,7 @@
 **To do (15/4)**
 
 **Set Up**
-Cuando clickeo en cross para eliminar ship, dejar esa ship seleccionada..?
+* Cuando clickeo en cross para eliminar ship, dejar esa ship seleccionada..?
 Cuando se hace click en "confirmar" y no está lista la board -> warning message...
 
 **Replace placeholders con bot actions**
