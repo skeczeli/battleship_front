@@ -12,14 +12,42 @@ function BotsSetup() {
   const totalShips = 5;
 
   // Función que se ejecutará cuando Setup confirme
-  const handleConfirm = (board, placedShips) => {
+  const handleConfirm = async (board, placedShips) => {
     if (placedShips.length < totalShips) {
       alert("Coloca todos los barcos antes de empezar el juego.");
       return;
     }
-    // Navegamos a la ruta /play-mode/bots/game, pasando board en el state
-    navigate("/play-mode/bots/game", { state: { board } });
+  
+    try {
+      // Enviar tablero al backend Java
+      const response = await fetch("http://localhost:8080/api/game/setup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ board }),  // Aquí mandas el tablero al backend
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error al crear el tablero del bot en el servidor.");
+      }
+  
+      const data = await response.json();
+  
+      // Aquí navegas pasando tu tablero y el tablero que generó Java
+      navigate("/play-mode/bots/game", { 
+        state: { 
+          playerBoard: data.playerBoard,
+          botBoard: data.botBoard 
+        } 
+      });
+  
+    } catch (error) {
+      console.error(error);
+      alert("Ocurrió un problema al comunicarse con el servidor.");
+    }
   };
+  
 
   return (
     <div>

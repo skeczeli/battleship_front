@@ -9,10 +9,12 @@ function BotsGame() {
   const navigate = useNavigate();
 
   // Usamos el hook useBoard para el tablero del jugador (solo visualización)
-  const playerBoardState = state?.board;
+  const playerBoardState = state?.playerBoard;
+  const botBoardState = state?.botBoard;
+
 
   // Usamos otro hook useBoard para el tablero enemigo (para gestionar disparos)
-  const { board: enemyBoard, handleShot } = useBoard();
+  const { board: enemyBoard, handleShot } = useBoard(botBoardState);
 
   // Usamos el hook de sistema de turnos
   const { currentTurn, nextTurn } = useTurnSystem();

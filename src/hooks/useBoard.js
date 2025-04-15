@@ -224,8 +224,13 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
       // Clonar el tablero para actualizarlo
       const newBoard = [...board.map((boardRow) => [...boardRow])];
 
-      // CAMBIAR PARA DINAMISMO (por ahora hit default)
-      const result = Math.random() < 0.5 ? "hit" : "miss"; // Simulación de hit/miss
+      
+      const cellValue = board[row][col]; // El tablero real que te dio el backend
+
+      let result = "miss"; // Asumimos que es miss
+      if (cellValue !== null) {
+      result = "hit"; // Si hay un barco en esa celda, es un hit
+      }
 
       newBoard[row][col] = result;
 

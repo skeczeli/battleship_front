@@ -81,6 +81,9 @@ const ProfilePage = () => {
         <strong>Apodo:</strong> {profile.name || "Sin apodo"}
       </p>
       <p>
+        <strong>Email:</strong> {profile.email}
+      </p>
+      <p>
         <strong>Partidas ganadas:</strong> {profile.wins}
       </p>
       <p>
