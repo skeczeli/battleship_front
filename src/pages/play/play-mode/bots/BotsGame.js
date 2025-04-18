@@ -13,10 +13,12 @@ function BotsGame() {
   const botBoardState = state?.botBoard;
 
   //Tablero del jugador (el bot dispara a este)
-  const { board: playerBoard, handleShot: handlePlayerBoardShot } = useBoard(playerBoardState);
-  
+  const { board: playerBoard, handleShot: handlePlayerBoardShot } =
+    useBoard(playerBoardState);
+
   //Tablero del bot (el jugador dispara a este)
-  const { board: enemyBoard, handleShot: handleEnemyBoardShot } = useBoard(botBoardState);
+  const { board: enemyBoard, handleShot: handleEnemyBoardShot } =
+    useBoard(botBoardState);
 
   // Usamos el hook de sistema de turnos
   const { currentTurn, nextTurn } = useTurnSystem();
@@ -26,20 +28,68 @@ function BotsGame() {
     "Haz clic en el tablero enemigo para disparar"
   );
 
-   // Estado para llevar la cuenta de barcos hundidos
-   const [playerSunkShips, setPlayerSunkShips] = useState(0);
-   const [enemySunkShips, setEnemySunkShips] = useState(0);
- 
-   // Estado para controlar fin del juego
-   const [gameOver, setGameOver] = useState(false);
-   const [winner, setWinner] = useState(null);
+  // Estado para llevar la cuenta de barcos hundidos
+  const [playerSunkShips, setPlayerSunkShips] = useState(0);
+  const [enemySunkShips, setEnemySunkShips] = useState(0);
 
-   // Verificar condición de victoria
+  // Estado para controlar fin del juego
+  const [gameOver, setGameOver] = useState(false);
+  const [winner, setWinner] = useState(null);
+
+  // Verificar condición de victoria
   const checkVictoryCondition = useCallback(() => {
     if (playerSunkShips >= 5) {
       setGameOver(true);
       setWinner("player");
       setGameMessage("¡Felicidades! Has ganado la partida.");
+      try {
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (!userData || !userData.token) {
+          console.error("Token no encontrado. Iniciá sesión nuevamente.");
+          return;
+        }
+
+        const token = userData.token;
+
+        fetch("http://localhost:8080/api/users/update-score", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            score: 1,
+            isWin: true,
+          }),
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) {
+              if (res.status === 401) {
+                console.error(
+                  "Autenticación fallida. Iniciá sesión nuevamente."
+                );
+                throw new Error("Token inválido o expirado");
+              }
+              throw new Error(`Error del servidor: ${res.status}`);
+            }
+
+            return res.json().catch(() => ({})); // Maneja respuesta vacía
+          })
+          .then((data) => {
+            // Éxito: actualizá UI si es necesario
+            console.log("Puntaje actualizado");
+          })
+          .catch((error) => {
+            console.error("Error al actualizar el puntaje:", error.message);
+          });
+      } catch (error) {
+        console.error(
+          "Error general en el proceso de actualización:",
+          error.message
+        );
+      }
+
       // Redirigir después de 6 segundos
       setTimeout(() => {
         navigate("/play");
@@ -48,7 +98,57 @@ function BotsGame() {
     } else if (enemySunkShips >= 5) {
       setGameOver(true);
       setWinner("enemy");
-      setGameMessage("¡Has perdido la partida! El enemigo ha hundido todos tus barcos.");
+      setGameMessage(
+        "¡Has perdido la partida! El enemigo ha hundido todos tus barcos."
+      );
+      try {
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (!userData || !userData.token) {
+          console.error("Token no encontrado. Iniciá sesión nuevamente.");
+          return;
+        }
+
+        const token = userData.token;
+
+        fetch("http://localhost:8080/api/users/update-score", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            score: 1,
+            isWin: false,
+          }),
+          credentials: "include",
+        })
+          .then((res) => {
+            if (!res.ok) {
+              if (res.status === 401) {
+                console.error(
+                  "Autenticación fallida. Iniciá sesión nuevamente."
+                );
+                throw new Error("Token inválido o expirado");
+              }
+              throw new Error(`Error del servidor: ${res.status}`);
+            }
+
+            return res.json().catch(() => ({})); // Maneja respuesta vacía
+          })
+          .then((data) => {
+            // Éxito: actualizá UI si es necesario
+            console.log("Puntaje actualizado");
+          })
+          .catch((error) => {
+            console.error("Error al actualizar el puntaje:", error.message);
+          });
+      } catch (error) {
+        console.error(
+          "Error general en el proceso de actualización:",
+          error.message
+        );
+      }
+
       // Redirigir después de 3 segundos
       setTimeout(() => {
         navigate("/play");
@@ -58,7 +158,6 @@ function BotsGame() {
     return false;
   }, [playerSunkShips, enemySunkShips, navigate]);
 
-
   // Lógica para cuando el turno cambia al bot
   useEffect(() => {
     if (currentTurn === "enemy") {
@@ -66,15 +165,18 @@ function BotsGame() {
         if (gameOver) return;
         // Genera coordenadas aleatorias para el disparo del bot
         let row, col;
-  
+
         do {
           row = Math.floor(Math.random() * 10);
           col = Math.floor(Math.random() * 10);
-        } while (playerBoard[row][col] === "hit" || playerBoard[row][col] === "miss");
-  
+        } while (
+          playerBoard[row][col] === "hit" ||
+          playerBoard[row][col] === "miss"
+        );
+
         // usa handlePlayerBoardShot porque esta vinculado a la tabla del jugador (modifica esta)
         const shotResult = handlePlayerBoardShot(row, col);
-  
+
         // Si el disparo fue válido, actualizamos el mensaje
         if (shotResult) {
           const coordLabel = `${String.fromCharCode(65 + shotResult.col)}${
@@ -86,37 +188,40 @@ function BotsGame() {
           } else if (shotResult.result === "miss") {
             result = "El disparo del enemigo falló.";
           }
-          
+
           // Verificar barco hundido
           if (shotResult.message && shotResult.message.includes("hundido")) {
-            setEnemySunkShips(prev => {
+            setEnemySunkShips((prev) => {
               const newCount = prev + 1;
               setGameMessage(
-                `¡Barco hundido! Tu turno.`
+                <span style={{ color: "red" }}>{"Barco hundido!"}</span>
               );
               return newCount;
             });
           } else {
             setGameMessage(
-              `El enemigo disparó a ${coordLabel}. Resultado: ${result}. Tu turno.`
+              <>
+                El enemigo disparó a {coordLabel}. Resultado:{" "}
+                <span style={{ color: "red" }}>{result}</span> Tu turno.
+              </>
             );
           }
-  
+
           // Cambiar al turno del jugador después del disparo
           if (!checkVictoryCondition()) {
             nextTurn();
+          }
         }
-      }
       }, 2000); // Espera 2 segundos antes de que el bot dispare
     }
-  }, [currentTurn, nextTurn, handlePlayerBoardShot, playerBoard, checkVictoryCondition, gameOver]);
-
-  // Efecto para verificar la condición de victoria después de actualizar contadores
-  useEffect(() => {
-    if (!gameOver) {
-      checkVictoryCondition();
-    }
-  }, [playerSunkShips, enemySunkShips, checkVictoryCondition, gameOver]);
+  }, [
+    currentTurn,
+    nextTurn,
+    handlePlayerBoardShot,
+    playerBoard,
+    checkVictoryCondition,
+    gameOver,
+  ]);
 
   // Si no se recibió la board del jugador, mostramos error
   if (!playerBoardState) {
@@ -158,16 +263,19 @@ function BotsGame() {
 
       // Verificar barco hundido
       if (shotResult.message && shotResult.message.includes("hundido")) {
-        setPlayerSunkShips(prev => {
+        setPlayerSunkShips((prev) => {
           const newCount = prev + 1;
-        setGameMessage(
-          `¡Barco hundido!`
-        );
-        return newCount;
+          setGameMessage(
+            <span style={{ color: "red" }}>{"Barco hundido!"}</span>
+          );
+          return newCount;
         });
       } else {
         setGameMessage(
-          `El enemigo disparó a ${coordLabel}. Resultado: ${result}. Tu turno.`
+          <>
+            Disparaste a {coordLabel}. Resultado:{" "}
+            <span style={{ color: "red" }}>{result}</span>
+          </>
         );
       }
 
@@ -184,12 +292,16 @@ function BotsGame() {
       <div className="game-status">
         <p>{gameMessage}</p>
         {!gameOver && (
-          <p>Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}</p>
+          <p>
+            Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}
+          </p>
         )}
-        <div className="score-container"> 
-          <p>Barcos enemigos hundidos: {playerSunkShips}/5</p>  {/* cambiar depende la cant de barcos */}
-          <p>Tus barcos hundidos: {enemySunkShips}/5</p>  {/* cambiar depende la cant de barcos */}
-        </div> 
+        <div className="score-container">
+          <p>Barcos enemigos hundidos: {playerSunkShips}/5</p>{" "}
+          {/* cambiar depende la cant de barcos */}
+          <p>Tus barcos hundidos: {enemySunkShips}/5</p>{" "}
+          {/* cambiar depende la cant de barcos */}
+        </div>
         {gameOver && (
           <div className="game-over-message">
             <h4>{winner === "player" ? "¡Victoria!" : "¡Derrota!"}</h4>

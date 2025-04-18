@@ -30,15 +30,19 @@ const ProfilePage = () => {
 
   const handleFollow = async () => {
     // lógica para seguir usuario
-    alert("Ahora estás siguiendo a este usuario.");
+    if (!currentUser) {
+      alert("Inicia sesión para seguir a otros usuarios.");
+      return;
+    }
+    alert("Funcionalidad aún no implementada.");
   };
 
   const handleDelete = async () => {
     const usernameInput = prompt("Escribí tu nombre de usuario:");
     const passwordInput = prompt("Escribí tu contraseña:");
-  
+
     if (!usernameInput || !passwordInput) return;
-  
+
     try {
       const res = await fetch("http://localhost:8080/api/delete-account", {
         method: "POST",
@@ -50,13 +54,13 @@ const ProfilePage = () => {
           password: passwordInput,
         }),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.text();
         alert(errorData || "No se pudo eliminar la cuenta.");
         return;
       }
-  
+
       alert("Cuenta eliminada correctamente.");
       localStorage.removeItem("user"); // 🔓 cerrás sesión
       window.location.href = "/"; // 🏠 redirige al home
@@ -64,8 +68,7 @@ const ProfilePage = () => {
       alert("Error al conectar con el servidor.");
       console.error(error);
     }
-  };  
-  
+  };
 
   if (error) return <p>{error}</p>;
   if (!profile) return <p>Cargando perfil...</p>;
@@ -94,15 +97,17 @@ const ProfilePage = () => {
       </p>
 
       {isCurrentUser ? (
-  <>
-  <button className="form-button" onClick={() => (window.location.href = "/editprofile")}>
-    Editar perfil
-  </button>
-  <button className="form-button delete-button" onClick={handleDelete}>
-    Eliminar cuenta
-  </button>
-</>
-
+        <>
+          <button
+            className="form-button"
+            onClick={() => (window.location.href = "/editprofile")}
+          >
+            Editar perfil
+          </button>
+          <button className="form-button delete-button" onClick={handleDelete}>
+            Eliminar cuenta
+          </button>
+        </>
       ) : (
         <button onClick={handleFollow}>Seguir</button>
       )}

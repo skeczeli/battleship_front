@@ -1,9 +1,18 @@
 // src/pages/Register.js
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/register.css";
 
 function Register() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData) {
+      // Redirect logged-in users to the home page or profile page
+      navigate(`/profile/${userData.username}`);
+    }
+  }, [navigate]);
   const [formData, setFormData] = useState({
     username: "",
     name: "",
