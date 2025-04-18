@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Board from "components/Board";
 import useBoard from "hooks/useBoard";
@@ -12,14 +12,11 @@ function BotsGame() {
   const playerBoardState = state?.playerBoard;
   const botBoardState = state?.botBoard;
 
-  //-----------------
-  // Creamos dos instancias separadas del hook useBoard:
-  // 1. Una para el tablero del jugador (que el bot disparará)
+  //Tablero del jugador (el bot dispara a este)
   const { board: playerBoard, handleShot: handlePlayerBoardShot } = useBoard(playerBoardState);
   
-  // 2. Otra para el tablero del bot (que el jugador disparará)
+  //Tablero del bot (el jugador dispara a este)
   const { board: enemyBoard, handleShot: handleEnemyBoardShot } = useBoard(botBoardState);
-  //-----------------
 
   // Usamos el hook de sistema de turnos
   const { currentTurn, nextTurn } = useTurnSystem();
@@ -29,24 +26,54 @@ function BotsGame() {
     "Haz clic en el tablero enemigo para disparar"
   );
 
-  // Lógica para cuando el turno cambia al bot (enemigo)
+   // Estado para llevar la cuenta de barcos hundidos
+   const [playerSunkShips, setPlayerSunkShips] = useState(0);
+   const [enemySunkShips, setEnemySunkShips] = useState(0);
+ 
+   // Estado para controlar fin del juego
+   const [gameOver, setGameOver] = useState(false);
+   const [winner, setWinner] = useState(null);
+
+   // Verificar condición de victoria
+  const checkVictoryCondition = useCallback(() => {
+    if (playerSunkShips >= 5) {
+      setGameOver(true);
+      setWinner("player");
+      setGameMessage("¡Felicidades! Has ganado la partida.");
+      // Redirigir después de 6 segundos
+      setTimeout(() => {
+        navigate("/play");
+      }, 6000);
+      return true;
+    } else if (enemySunkShips >= 5) {
+      setGameOver(true);
+      setWinner("enemy");
+      setGameMessage("¡Has perdido la partida! El enemigo ha hundido todos tus barcos.");
+      // Redirigir después de 3 segundos
+      setTimeout(() => {
+        navigate("/play");
+      }, 6000);
+      return true;
+    }
+    return false;
+  }, [playerSunkShips, enemySunkShips, navigate]);
+
+
+  // Lógica para cuando el turno cambia al bot
   useEffect(() => {
     if (currentTurn === "enemy") {
-      // El bot dispara después de un retraso de 2 segundos
       setTimeout(() => {
+        if (gameOver) return;
         // Genera coordenadas aleatorias para el disparo del bot
         let row, col;
   
-        //-----------------
-        // Buscar una celda vacía aleatoria en el tablero del JUGADOR
         do {
           row = Math.floor(Math.random() * 10);
           col = Math.floor(Math.random() * 10);
         } while (playerBoard[row][col] === "hit" || playerBoard[row][col] === "miss");
   
-        // El bot dispara al tablero del JUGADOR usando handlePlayerBoardShot
+        // usa handlePlayerBoardShot porque esta vinculado a la tabla del jugador (modifica esta)
         const shotResult = handlePlayerBoardShot(row, col);
-        //-----------------
   
         // Si el disparo fue válido, actualizamos el mensaje
         if (shotResult) {
@@ -59,16 +86,37 @@ function BotsGame() {
           } else if (shotResult.result === "miss") {
             result = "El disparo del enemigo falló.";
           }
-          setGameMessage(
-            `El enemigo disparó a ${coordLabel}. Resultado: ${result}. Tu turno.`
-          );
+          
+          // Verificar barco hundido
+          if (shotResult.message && shotResult.message.includes("hundido")) {
+            setEnemySunkShips(prev => {
+              const newCount = prev + 1;
+              setGameMessage(
+                `¡Barco hundido! Tu turno.`
+              );
+              return newCount;
+            });
+          } else {
+            setGameMessage(
+              `El enemigo disparó a ${coordLabel}. Resultado: ${result}. Tu turno.`
+            );
+          }
   
           // Cambiar al turno del jugador después del disparo
-          nextTurn();
+          if (!checkVictoryCondition()) {
+            nextTurn();
         }
+      }
       }, 2000); // Espera 2 segundos antes de que el bot dispare
     }
-  }, [currentTurn, nextTurn, handlePlayerBoardShot, playerBoard]);
+  }, [currentTurn, nextTurn, handlePlayerBoardShot, playerBoard, checkVictoryCondition, gameOver]);
+
+  // Efecto para verificar la condición de victoria después de actualizar contadores
+  useEffect(() => {
+    if (!gameOver) {
+      checkVictoryCondition();
+    }
+  }, [playerSunkShips, enemySunkShips, checkVictoryCondition, gameOver]);
 
   // Si no se recibió la board del jugador, mostramos error
   if (!playerBoardState) {
@@ -93,10 +141,8 @@ function BotsGame() {
       return;
     }
 
-    //-----------------
     // Usamos la función handleEnemyBoardShot para disparar al tablero enemigo
     const shotResult = handleEnemyBoardShot(row, col);
-    //-----------------
 
     // Si el disparo fue válido, actualizamos el mensaje
     if (shotResult) {
@@ -109,12 +155,26 @@ function BotsGame() {
       } else if (shotResult.result === "miss") {
         result = "¡Agua!";
       }
-      setGameMessage(
-        `Has disparado a ${coordLabel}. Resultado: ${result}. Turno del enemigo.`
-      );
+
+      // Verificar barco hundido
+      if (shotResult.message && shotResult.message.includes("hundido")) {
+        setPlayerSunkShips(prev => {
+          const newCount = prev + 1;
+        setGameMessage(
+          `¡Barco hundido!`
+        );
+        return newCount;
+        });
+      } else {
+        setGameMessage(
+          `El enemigo disparó a ${coordLabel}. Resultado: ${result}. Tu turno.`
+        );
+      }
 
       // Cambiamos al turno del enemigo
-      nextTurn();
+      if (!checkVictoryCondition()) {
+        nextTurn();
+      }
     }
   };
 
@@ -123,7 +183,19 @@ function BotsGame() {
       <h3>Juego en modo Bots</h3>
       <div className="game-status">
         <p>{gameMessage}</p>
-        <p>Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}</p>
+        {!gameOver && (
+          <p>Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}</p>
+        )}
+        <div className="score-container"> 
+          <p>Barcos enemigos hundidos: {playerSunkShips}/5</p>  {/* cambiar depende la cant de barcos */}
+          <p>Tus barcos hundidos: {enemySunkShips}/5</p>  {/* cambiar depende la cant de barcos */}
+        </div> 
+        {gameOver && (
+          <div className="game-over-message">
+            <h4>{winner === "player" ? "¡Victoria!" : "¡Derrota!"}</h4>
+            <p>Redirigiendo a seleccion de modos...</p>
+          </div>
+        )}
       </div>
       <div
         className="boards-container"
@@ -144,7 +216,7 @@ function BotsGame() {
           <h4>Tablero Enemigo</h4>
           <Board
             board={enemyBoard}
-            onCellClick={handlePlayerShot}
+            onCellClick={handlePlayerShot} //usa handleplayershot que dentro esta handleEnemyBoardShot
             highlightedCells={[]}
             onCellHover={() => {}}
             onBoardLeave={() => {}}

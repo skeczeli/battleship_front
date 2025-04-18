@@ -18,3 +18,4 @@ Cambiar:
 Avisar cuando se sale de la página que se pierde la partida??
 O permitir que el bot quede hanging por cierto tiempo (persistencia temporal)
 Qué pasa si se hace log out mid-match??
+dice "resultado: el enemigo fallo". decir "resultado: agua"?

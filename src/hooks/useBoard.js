@@ -51,6 +51,57 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     return cells;
   }, []);
 
+  // Inicializa shipPositions con info de los barcos ya colocados en el tablero inicial
+  const initializeShipPositions = useCallback(() => {
+    if (!initialBoardState) return {};
+
+    const shipPositions = {};
+    const shipCells = {}; // Agrupa las celdas por ID de barco
+
+    // Recorre todo el tablero para encontrar todos los barcos
+    for (let row = 0; row < 10; row++) {
+      for (let col = 0; col < 10; col++) {
+        const cellValue = initialBoardState[row][col];
+        if (cellValue !== null && cellValue !== "hit" && cellValue !== "miss") {
+          // Crea el array de celdas para este barco si no existe
+          if (!shipCells[cellValue]) {
+            shipCells[cellValue] = [];
+          }
+          // Añade esta celda al array de celdas de este barco
+          shipCells[cellValue].push([row, col]);
+        }
+      }
+    }
+
+    // Para cada barco, determina su orientación y tamaño
+    Object.keys(shipCells).forEach(shipId => {
+      const cells = shipCells[shipId];
+      let orientation = "horizontal";
+      
+      // Determina la orientación (si todas las celdas tienen la misma fila, es horizontal)
+      if (cells.length > 1) {
+        const firstRow = cells[0][0];
+        const allSameRow = cells.every(cell => cell[0] === firstRow);
+        orientation = allSameRow ? "horizontal" : "vertical";
+      }
+      
+      // El tamaño es la cantidad de celdas
+      const size = cells.length;
+      
+      // Guarda la información del barco
+      shipPositions[shipId] = {
+        cells,
+        orientation,
+        size
+      };
+    });
+
+    return shipPositions;
+  }, [initialBoardState]);
+
+  // Estado para mantener un registro de las posiciones de los barcos
+  const [shipPositions, setShipPositions] = useState(initializeShipPositions);
+
   // Verifica si es posible colocar el barco en esa posición
   const canPlaceShip = useCallback(
     (row, col, ship, shipOrientation) => {
@@ -96,6 +147,16 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
           newBoard[r][c] = selectedShip.id;
         });
 
+        // Guardar las posiciones del barco
+        setShipPositions(prev => ({
+          ...prev,
+          [selectedShip.id]: {
+            cells,
+            orientation,
+            size: selectedShip.size
+          }
+        }));
+
         setBoard(newBoard);
         setPlacedShips([...placedShips, selectedShip.id]);
         // Desseleccionar el barco después de colocarlo
@@ -129,12 +190,17 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
       );
       setBoard(newBoard);
 
+      // Eliminar las posiciones guardadas del barco
+      const newShipPositions = { ...shipPositions };
+      delete newShipPositions[shipId];
+      setShipPositions(newShipPositions);
+
       // Si este era el barco seleccionado, lo deseleccionamos
       if (selectedShip && selectedShip.id === shipId) {
         setSelectedShip(null);
       }
     },
-    [board, placedShips, selectedShip]
+    [board, placedShips, selectedShip, shipPositions]
   );
 
   // Función para cambiar la orientación del barco
@@ -171,6 +237,7 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     setSelectedShip(null);
     setHoveredCell(null);
     setHighlightedCells([]);
+    setShipPositions({});
   }, []);
 
   // Función para seleccionar un barco
@@ -213,7 +280,7 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     }
   }, [orientation, hoveredCell, updateHighlightedCells]);
 
-  // NUEVA FUNCIÓN: Manejar disparos al tablero
+  // Manejar disparos al tablero
   const handleShot = useCallback(
     (row, col) => {
       // Si ya se disparó a esa celda (hit o miss), no hacer nada
@@ -237,14 +304,33 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
       // Actualizar el tablero
       setBoard(newBoard);
 
+
+      let message = "";
+
+      // Verificar si el barco ha sido hundido
+      if (cellValue !== null) {
+          // Obtenemos todas las celdas de ese barco usando shipPositions
+          const shipInfo = shipPositions[cellValue];
+          
+          // Verificamos si todas las celdas del barco están marcadas como "hit"
+          const isSunk = shipInfo.cells.every(([r, c]) => {
+            return newBoard[r][c] === "hit";
+          });
+
+          if (isSunk) {
+            message = "¡Barco hundido!";
+          }
+        }
+
       // Devolver las coordenadas y resultado para que el componente pueda mostrar mensajes
       return {
         row,
         col,
         result: result,
+        message,
       };
     },
-    [board]
+    [board, shipPositions]
   );
 
   return {
@@ -264,7 +350,7 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     handleSelectShip,
     resetBoard,
     canPlaceAtCurrentPosition,
-    handleShot, // Exponemos la nueva función
+    handleShot,
   };
 };
 
