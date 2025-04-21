@@ -38,125 +38,74 @@ function BotsGame() {
 
   // Verificar condición de victoria
   const checkVictoryCondition = useCallback(() => {
-    if (playerSunkShips >= 5) {
-      setGameOver(true);
-      setWinner("player");
+    if (playerSunkShips >= 5) return "player";
+    if (enemySunkShips >= 5) return "enemy";
+    return null;
+  }, [playerSunkShips, enemySunkShips]);
+
+  useEffect(() => {
+    if (gameOver) return;
+
+    const winner = checkVictoryCondition();
+    if (!winner) return;
+
+    setGameOver(true);
+    setWinner(winner);
+
+    if (winner === "player") {
       setGameMessage("¡Felicidades! Has ganado la partida.");
-      try {
-        const userData = JSON.parse(localStorage.getItem("user"));
-        if (!userData || !userData.token) {
-          console.error("Token no encontrado. Iniciá sesión nuevamente.");
-          return;
-        }
-
-        const token = userData.token;
-
-        fetch("http://localhost:8080/api/users/update-score", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            score: 1,
-            isWin: true,
-          }),
-          credentials: "include",
-        })
-          .then((res) => {
-            if (!res.ok) {
-              if (res.status === 401) {
-                console.error(
-                  "Autenticación fallida. Iniciá sesión nuevamente."
-                );
-                throw new Error("Token inválido o expirado");
-              }
-              throw new Error(`Error del servidor: ${res.status}`);
-            }
-
-            return res.json().catch(() => ({})); // Maneja respuesta vacía
-          })
-          .then((data) => {
-            // Éxito: actualizá UI si es necesario
-            console.log("Puntaje actualizado");
-          })
-          .catch((error) => {
-            console.error("Error al actualizar el puntaje:", error.message);
-          });
-      } catch (error) {
-        console.error(
-          "Error general en el proceso de actualización:",
-          error.message
-        );
-      }
-
-      // Redirigir después de 6 segundos
-      setTimeout(() => {
-        navigate("/play");
-      }, 6000);
-      return true;
-    } else if (enemySunkShips >= 5) {
-      setGameOver(true);
-      setWinner("enemy");
+    } else {
       setGameMessage(
         "¡Has perdido la partida! El enemigo ha hundido todos tus barcos."
       );
+    }
+
+    const updateScore = async () => {
       try {
         const userData = JSON.parse(localStorage.getItem("user"));
-        if (!userData || !userData.token) {
+        if (!userData?.token) {
           console.error("Token no encontrado. Iniciá sesión nuevamente.");
           return;
         }
 
         const token = userData.token;
 
-        fetch("http://localhost:8080/api/users/update-score", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            score: 1,
-            isWin: false,
-          }),
-          credentials: "include",
-        })
-          .then((res) => {
-            if (!res.ok) {
-              if (res.status === 401) {
-                console.error(
-                  "Autenticación fallida. Iniciá sesión nuevamente."
-                );
-                throw new Error("Token inválido o expirado");
-              }
-              throw new Error(`Error del servidor: ${res.status}`);
-            }
-
-            return res.json().catch(() => ({})); // Maneja respuesta vacía
-          })
-          .then((data) => {
-            // Éxito: actualizá UI si es necesario
-            console.log("Puntaje actualizado");
-          })
-          .catch((error) => {
-            console.error("Error al actualizar el puntaje:", error.message);
-          });
-      } catch (error) {
-        console.error(
-          "Error general en el proceso de actualización:",
-          error.message
+        const res = await fetch(
+          "http://localhost:8080/api/users/update-score",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              score: 1,
+              isWin: winner === "player",
+            }),
+            credentials: "include",
+          }
         );
-      }
 
-      // Redirigir después de 3 segundos
-      setTimeout(() => {
-        navigate("/play");
-      }, 6000);
-      return true;
-    }
-    return false;
-  }, [playerSunkShips, enemySunkShips, navigate]);
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.error("Autenticación fallida. Iniciá sesión nuevamente.");
+          } else {
+            console.error(`Error del servidor: ${res.status}`);
+          }
+        } else {
+          console.log("Puntaje actualizado");
+        }
+      } catch (error) {
+        console.error("Error al actualizar el puntaje:", error.message);
+      }
+    };
+
+    updateScore();
+
+    setTimeout(() => {
+      navigate("/play");
+    }, 3000);
+  }, [checkVictoryCondition, gameOver, navigate]);
 
   // Lógica para cuando el turno cambia al bot
   useEffect(() => {

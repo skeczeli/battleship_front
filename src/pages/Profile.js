@@ -1,7 +1,6 @@
-// src/components/ProfilePage.js
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import "../styles/register.css";
+import "styles/register.css";
 
 const ProfilePage = () => {
   const { username } = useParams();

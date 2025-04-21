@@ -1,6 +1,6 @@
 // src/pages/Rules.js
 import React from "react";
-import "../styles/rules.css";
+import "styles/rules.css";
 
 function Rules() {
   return (

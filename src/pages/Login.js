@@ -1,7 +1,7 @@
 // src/pages/Login.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../styles/register.css";
+import "styles/register.css";
 
 function Login() {
   const navigate = useNavigate();
@@ -36,16 +36,24 @@ function Login() {
 
       if (response.ok) {
         const user = await response.json();
-        const token = response.headers
-          .get("Authorization")
-          ?.replace("Bearer ", "");
-        const fullUser = { ...user, token };
+        const authHeader = response.headers.get("Authorization");
 
+        const token = authHeader?.replace("Bearer ", "");
+
+        if (!token) {
+          console.error("No se pudo extraer el token");
+          alert("Falló la autenticación");
+          return;
+        }
+
+        const fullUser = { ...user, token };
         localStorage.setItem("user", JSON.stringify(fullUser));
+
+        // Redireccionás recién después de guardar todo
         window.location.href = "/";
       } else {
-        const error = await response.text();
-        alert("Error al iniciar sesión: " + error);
+        const errorData = await response.text();
+        alert(errorData || "Error en la autenticación");
       }
     } catch (err) {
       console.error("Error en login:", err);

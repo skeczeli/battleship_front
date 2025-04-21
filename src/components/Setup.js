@@ -1,6 +1,6 @@
 // Setup.js
 import React, { useEffect } from "react";
-import "../styles/setup.css";
+import "styles/setup.css";
 import Board from "./Board";
 import ShipList from "./ShipList";
 import useBoard from "../hooks/useBoard";
