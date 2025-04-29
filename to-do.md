@@ -20,3 +20,21 @@ Avisar cuando se sale de la página que se pierde la partida??
 O permitir que el bot quede hanging por cierto tiempo (persistencia temporal)
 Qué pasa si se hace log out mid-match??
 dice "resultado: el enemigo fallo". decir "resultado: agua"?
+
+**INSTRUCCIONES SEBA PARCIAL 1:**
+Usuarios no logged in tienen id temporal asociado a la SESION (cookies?) y a ese id se asocia la board del setup
+-> modificar sistema de persistencia de la board del setup... (juan)
+
+Pasar toda la lógica del juego al back (sofi)
+
+ID de partida para direccionar a ella...
+Guardar PARTIDA en db ("persistencia") -> gameId, 2 playerIds, boards, historial, hits/misses/#sunk, isOver (sofi)
+Guardar más estadísticas en db (hits+misses -> calcular accuracy)
+
+Mostrar "chat" con historial de la partida (juan)
+
+Botón de abandono en partida == derrota (juan)
+1 solo idioma (ranking, rules, logout/log in/register) (juan)
+Mismo form para register y editar perfil (juan)
+
+Cómo acceder a partidas previas? -> historial de partidas en perfil..? (sofi)

@@ -161,7 +161,7 @@ function BotsGame() {
             nextTurn();
           }
         }
-      }, 2000); // Espera 2 segundos antes de que el bot dispare
+      }, 500); // Espera 2 segundos antes de que el bot dispare
     }
   }, [
     currentTurn,
