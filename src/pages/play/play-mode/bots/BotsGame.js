@@ -1,290 +1,385 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import Board from "components/Board";
-import useBoard from "hooks/useBoard";
-import useTurnSystem from "hooks/useTurnSystem";
+import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+import GameBoard from "components/Board";
+import PlayerService from "services/PlayerService";
 
 function BotsGame() {
-  const { state } = useLocation();
+  const location = useLocation();
+  const { gameId } = useParams();
   const navigate = useNavigate();
+  const playerId = PlayerService.getPlayerId();
 
-  // Usamos el hook useBoard para el tablero del jugador (solo visualización)
-  const playerBoardState = state?.playerBoard;
-  const botBoardState = state?.botBoard;
+  // Obtener el tablero inicial del estado de navegación
+  const initialPlayerBoard = location.state?.playerBoard;
 
-  //Tablero del jugador (el bot dispara a este)
-  const { board: playerBoard, handleShot: handlePlayerBoardShot } =
-    useBoard(playerBoardState);
-
-  //Tablero del bot (el jugador dispara a este)
-  const { board: enemyBoard, handleShot: handleEnemyBoardShot } =
-    useBoard(botBoardState);
-
-  // Usamos el hook de sistema de turnos
-  const { currentTurn, nextTurn } = useTurnSystem();
-
-  // Estado para mensaje del juego
-  const [gameMessage, setGameMessage] = useState(
-    "Haz clic en el tablero enemigo para disparar"
+  // Estados para los tableros
+  const [playerBoard, setPlayerBoard] = useState(initialPlayerBoard || null);
+  const [opponentBoard, setOpponentBoard] = useState(
+    Array(10)
+      .fill()
+      .map(() => Array(10).fill(null))
   );
 
-  // Estado para llevar la cuenta de barcos hundidos
-  const [playerSunkShips, setPlayerSunkShips] = useState(0);
-  const [enemySunkShips, setEnemySunkShips] = useState(0);
-
-  // Estado para controlar fin del juego
+  // Estados del juego
+  const [gameStatus, setGameStatus] = useState("Conectando...");
+  const [isPlayerTurn, setIsPlayerTurn] = useState(false);
+  const [lastShot, setLastShot] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
 
-  // Verificar condición de victoria
-  const checkVictoryCondition = useCallback(() => {
-    if (playerSunkShips >= 5) return "player";
-    if (enemySunkShips >= 5) return "enemy";
-    return null;
-  }, [playerSunkShips, enemySunkShips]);
+  // Estado para rastrear los barcos hundidos
+  const [sunkShips, setSunkShips] = useState({
+    player: [], // IDs de los barcos del jugador que han sido hundidos
+    opponent: [], // IDs de los barcos del oponente que han sido hundidos
+  });
 
+  // Referencia al cliente STOMP
+  const stompClient = useRef(null);
+
+  // Validar que tenemos el tablero y el gameId
   useEffect(() => {
-    if (gameOver) return;
-
-    const winner = checkVictoryCondition();
-    if (!winner) return;
-
-    setGameOver(true);
-    setWinner(winner);
-
-    if (winner === "player") {
-      setGameMessage("¡Felicidades! Has ganado la partida.");
-    } else {
-      setGameMessage(
-        "¡Has perdido la partida! El enemigo ha hundido todos tus barcos."
+    if (!initialPlayerBoard) {
+      alert(
+        "No hay configuración de tablero. Volviendo a la pantalla de configuración."
       );
+      navigate("/play-mode/bots/setup");
+      return;
     }
 
-    const updateScore = async () => {
-      try {
-        const userData = JSON.parse(localStorage.getItem("user"));
-        if (!userData?.token) {
-          console.error("Token no encontrado. Iniciá sesión nuevamente.");
-          return;
-        }
+    if (!gameId) {
+      alert("ID de juego no disponible");
+      navigate("/play-mode/bots/setup");
+      return;
+    }
+  }, [initialPlayerBoard, gameId, navigate]);
 
-        const token = userData.token;
+  // Inicializar la conexión WebSocket
+  useEffect(() => {
+    if (!initialPlayerBoard || !gameId) return;
 
-        const res = await fetch(
-          "http://localhost:8080/api/users/update-score",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              score: 1,
-              isWin: winner === "player",
-            }),
-            credentials: "include",
-          }
-        );
+    console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
 
-        if (!res.ok) {
-          if (res.status === 401) {
-            console.error("Autenticación fallida. Iniciá sesión nuevamente.");
-          } else {
-            console.error(`Error del servidor: ${res.status}`);
-          }
-        } else {
-          console.log("Puntaje actualizado");
-        }
-      } catch (error) {
-        console.error("Error al actualizar el puntaje:", error.message);
-      }
+    // Crear conexión SockJS
+    const socket = new SockJS("http://localhost:8080/ws");
+
+    // Crear cliente STOMP sobre SockJS
+    const client = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    // Definir las funciones manejadoras dentro del useEffect
+    // Función para manejar el inicio del juego
+    const handleGameStart = (data) => {
+      setIsPlayerTurn(data.turn === playerId);
+      setGameStatus(data.turn === playerId ? "Tu turno" : "Turno del oponente");
     };
 
-    updateScore();
+    // Función para manejar el resultado de un disparo
+    const handleShotResult = (data) => {
+      if (data.playerId === playerId) {
+        // Actualizar tablero del oponente con nuestro disparo
+        const newOpponentBoard = [...opponentBoard];
+        const { row, col, hit } = data;
+        newOpponentBoard[row][col] = hit ? "hit" : "miss";
+        setOpponentBoard(newOpponentBoard);
 
-    setTimeout(() => {
-      navigate("/play");
-    }, 3000);
-  }, [checkVictoryCondition, gameOver, navigate]);
+        // Verificar si se hundió un barco
+        if (data.shipSunk) {
+          // Agregar el barco a la lista de barcos hundidos del oponente
+          setSunkShips((prev) => ({
+            ...prev,
+            opponent: [...prev.opponent, data.shipId],
+          }));
 
-  // Lógica para cuando el turno cambia al bot
-  useEffect(() => {
-    if (currentTurn === "enemy") {
-      setTimeout(() => {
-        if (gameOver) return;
-        // Genera coordenadas aleatorias para el disparo del bot
-        let row, col;
-
-        do {
-          row = Math.floor(Math.random() * 10);
-          col = Math.floor(Math.random() * 10);
-        } while (
-          playerBoard[row][col] === "hit" ||
-          playerBoard[row][col] === "miss"
-        );
-
-        // usa handlePlayerBoardShot porque esta vinculado a la tabla del jugador (modifica esta)
-        const shotResult = handlePlayerBoardShot(row, col);
-
-        // Si el disparo fue válido, actualizamos el mensaje
-        if (shotResult) {
-          const coordLabel = `${String.fromCharCode(65 + shotResult.col)}${
-            shotResult.row + 1
-          }`;
-          let result;
-          if (shotResult.result === "hit") {
-            result = "¡El enemigo acertó!";
-          } else if (shotResult.result === "miss") {
-            result = "El disparo del enemigo falló.";
-          }
-
-          // Verificar barco hundido
-          if (shotResult.message && shotResult.message.includes("hundido")) {
-            setEnemySunkShips((prev) => {
-              const newCount = prev + 1;
-              setGameMessage(
-                <span style={{ color: "red" }}>{"Barco hundido!"}</span>
-              );
-              return newCount;
+          // Si el servidor proporciona las celdas del barco hundido, las marcamos
+          if (data.shipCells) {
+            data.shipCells.forEach((cell) => {
+              const [r, c] = cell;
+              newOpponentBoard[r][c] = "sunk"; // Marca especial para celdas de barcos hundidos
             });
-          } else {
-            setGameMessage(
-              <>
-                El enemigo disparó a {coordLabel}. Resultado:{" "}
-                <span style={{ color: "red" }}>{result}</span> Tu turno.
-              </>
-            );
-          }
-
-          // Cambiar al turno del jugador después del disparo
-          if (!checkVictoryCondition()) {
-            nextTurn();
           }
         }
-      }, 500); // Espera 2 segundos antes de que el bot dispare
-    }
+
+        setLastShot({
+          row,
+          col,
+          hit,
+          player: "player",
+          message: data.shipSunk ? `¡Hundiste un barco!` : undefined,
+        });
+      } else {
+        // Actualizar nuestro tablero con el disparo del oponente
+        const newPlayerBoard = [...playerBoard];
+        const { row, col, hit } = data;
+        newPlayerBoard[row][col] = hit ? "hit" : "miss";
+        setPlayerBoard(newPlayerBoard);
+
+        // Verificar si se hundió un barco del jugador
+        if (data.shipSunk) {
+          // Agregar el barco a la lista de barcos hundidos del jugador
+          setSunkShips((prev) => ({
+            ...prev,
+            player: [...prev.player, data.shipId],
+          }));
+        }
+
+        setLastShot({
+          row,
+          col,
+          hit,
+          player: "opponent",
+          message: data.shipSunk ? `¡El oponente hundió tu barco!` : undefined,
+        });
+      }
+
+      // Actualizar turno
+      setIsPlayerTurn(data.nextTurn === playerId);
+      setGameStatus(
+        data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
+      );
+    };
+
+    // Función para manejar el fin del juego
+    const handleGameOver = (data) => {
+      setGameOver(true);
+      setWinner(data.winner === playerId);
+      setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+    };
+
+    // Al establecer conexión
+    client.onConnect = () => {
+      console.log("Conectado al servidor WebSocket");
+      setGameStatus("Conectado. Esperando inicio del juego...");
+
+      // Suscribirse a mensajes del juego
+      client.subscribe(`/topic/game/${gameId}`, (message) => {
+        const data = JSON.parse(message.body);
+        console.log("Mensaje recibido:", data);
+
+        // Manejar diferentes tipos de mensajes
+        switch (data.type) {
+          case "GAME_START":
+            handleGameStart(data);
+            break;
+          case "SHOT_RESULT":
+            handleShotResult(data);
+            break;
+          case "GAME_OVER":
+            handleGameOver(data);
+            break;
+          default:
+            console.log("Tipo de mensaje desconocido:", data.type);
+        }
+      });
+
+      // Notificar que el jugador está listo -> check?
+      client.publish({
+        destination: `/app/game/${gameId}/join`,
+        body: JSON.stringify({ playerId, gameId }),
+      });
+    };
+
+    // Manejar errores de conexión
+    client.onStompError = (error) => {
+      console.error("Error en la conexión:", error);
+      setGameStatus("Error de conexión con el servidor");
+    };
+
+    // Iniciar conexión
+    client.activate();
+    stompClient.current = client;
+
+    // Limpiar al desmontar
+    return () => {
+      if (client.connected) {
+        client.deactivate();
+      }
+    };
   }, [
-    currentTurn,
-    nextTurn,
-    handlePlayerBoardShot,
+    gameId,
+    playerId,
+    initialPlayerBoard,
     playerBoard,
-    checkVictoryCondition,
-    gameOver,
+    opponentBoard,
+    setPlayerBoard,
+    setOpponentBoard,
+    setLastShot,
+    setIsPlayerTurn,
+    setGameStatus,
+    setSunkShips,
+    setGameOver,
+    setWinner,
   ]);
 
-  // Si no se recibió la board del jugador, mostramos error
-  if (!playerBoardState) {
+  // Manejar click en celda para disparar
+  const handleCellClick = (row, col) => {
+    // Solo permitir disparar si es el turno del jugador y no hay disparo previo en esa celda
+    if (
+      !isPlayerTurn ||
+      gameOver ||
+      opponentBoard[row][col] === "hit" ||
+      opponentBoard[row][col] === "miss" ||
+      opponentBoard[row][col] === "sunk"
+    ) {
+      return;
+    }
+
+    // Verificar conexión
+    if (!stompClient.current || !stompClient.current.connected) {
+      alert("No hay conexión con el servidor");
+      return;
+    }
+
+    // Enviar disparo al servidor
+    stompClient.current.publish({
+      destination: `/app/game/${gameId}/shot`,
+      body: JSON.stringify({ row, col, playerId, gameId }),
+    });
+
+    // Deshabilitar temporalmente el turno hasta recibir respuesta
+    setIsPlayerTurn(false);
+    setGameStatus("Esperando respuesta...");
+  };
+
+  // Manejar abandono de juego
+  const handleExitGame = () => {
+    if (stompClient.current && stompClient.current.connected) {
+      stompClient.current.publish({
+        destination: `/app/game/${gameId}/abandon`,
+        body: JSON.stringify({ playerId, gameId }),
+      });
+      stompClient.current.deactivate();
+    }
+    navigate("/");
+  };
+
+  // Renderizar el último disparo
+  const renderLastShot = () => {
+    if (!lastShot) return null;
+
+    const { row, col, hit, player, message } = lastShot;
+    const playerText =
+      player === "player" ? "Tu disparo" : "Disparo del oponente";
+    const resultText = hit ? "¡Impacto!" : "Agua";
+    const position = `[${String.fromCharCode(65 + row)}${col + 1}]`;
+
     return (
-      <div>
+      <div className="last-shot">
         <p>
-          No se recibió la configuración del tablero. Por favor, vuelve a
-          configurarlo.
+          {playerText} en {position}:{" "}
+          <span className={hit ? "hit" : "miss"}>{resultText}</span>
         </p>
-        <button onClick={() => navigate("/play-mode/bots/setup")}>
-          Ir a Setup
-        </button>
+        {message && <p className="shot-message">{message}</p>}
+      </div>
+    );
+  };
+
+  // Renderizar contador de barcos hundidos
+  const renderShipCounter = () => {
+    const totalShips = 5; // Ajusta este número según la cantidad de barcos en tu juego
+
+    return (
+      <div className="ship-counter">
+        <div className="player-counter">
+          <p>
+            Tus barcos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.player.length}/{totalShips}
+            </span>
+          </p>
+        </div>
+        <div className="opponent-counter">
+          <p>
+            Barcos enemigos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.opponent.length}/{totalShips}
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  // Mostrar pantalla de carga si no hay tablero
+  if (!playerBoard) {
+    return (
+      <div className="game-container">
+        <h2>Cargando juego...</h2>
       </div>
     );
   }
 
-  // Manejador para cuando el jugador dispara
-  const handlePlayerShot = (row, col) => {
-    // Verificar si es el turno del jugador
-    if (currentTurn !== "player") {
-      setGameMessage("No es tu turno para disparar.");
-      return;
-    }
-
-    // Usamos la función handleEnemyBoardShot para disparar al tablero enemigo
-    const shotResult = handleEnemyBoardShot(row, col);
-
-    // Si el disparo fue válido, actualizamos el mensaje
-    if (shotResult) {
-      const coordLabel = `${String.fromCharCode(65 + shotResult.col)}${
-        shotResult.row + 1
-      }`;
-      let result;
-      if (shotResult.result === "hit") {
-        result = "¡Tocado!";
-      } else if (shotResult.result === "miss") {
-        result = "¡Agua!";
-      }
-
-      // Verificar barco hundido
-      if (shotResult.message && shotResult.message.includes("hundido")) {
-        setPlayerSunkShips((prev) => {
-          const newCount = prev + 1;
-          setGameMessage(
-            <span style={{ color: "red" }}>{"Barco hundido!"}</span>
-          );
-          return newCount;
-        });
-      } else {
-        setGameMessage(
-          <>
-            Disparaste a {coordLabel}. Resultado:{" "}
-            <span style={{ color: "red" }}>{result}</span>
-          </>
-        );
-      }
-
-      // Cambiamos al turno del enemigo
-      if (!checkVictoryCondition()) {
-        nextTurn();
-      }
-    }
-  };
-
   return (
-    <div>
-      <h3>Juego en modo Bots</h3>
+    <div className="game-container">
+      <h2>Batalla Naval - Modo Bot</h2>
+
+      <div className="player-info">
+        <p>
+          Jugando como:{" "}
+          <span
+            className={
+              PlayerService.isGuestPlayer() ? "guest-player" : "auth-player"
+            }
+          >
+            {PlayerService.getPlayerDisplayName()}
+          </span>
+        </p>
+      </div>
+
       <div className="game-status">
-        <p>{gameMessage}</p>
-        {!gameOver && (
-          <p>
-            Turno actual: {currentTurn === "player" ? "Jugador" : "Enemigo"}
-          </p>
-        )}
-        <div className="score-container">
-          <p>Barcos enemigos hundidos: {playerSunkShips}/5</p>{" "}
-          {/* cambiar depende la cant de barcos */}
-          <p>Tus barcos hundidos: {enemySunkShips}/5</p>{" "}
-          {/* cambiar depende la cant de barcos */}
-        </div>
-        {gameOver && (
-          <div className="game-over-message">
-            <h4>{winner === "player" ? "¡Victoria!" : "¡Derrota!"}</h4>
-            <p>Redirigiendo a seleccion de modos...</p>
-          </div>
-        )}
+        <p className={gameOver ? (winner ? "win-status" : "lose-status") : ""}>
+          {gameStatus}
+        </p>
       </div>
-      <div
-        className="boards-container"
-        style={{ display: "flex", gap: "20px" }}
-      >
-        <div className="board-wrapper">
-          <h4>Tu Tablero</h4>
-          <Board
+
+      {renderShipCounter()}
+
+      <div className="boards-container">
+        <div className="board-section">
+          <h3>Tu tablero</h3>
+          <GameBoard
             board={playerBoard}
-            onCellClick={() => {}} // No se permite interacción con tu propio tablero
-            highlightedCells={[]}
-            onCellHover={() => {}}
-            onBoardLeave={() => {}}
-            isGameMode={true}
+            isPlayerBoard={true}
+            onCellClick={() => {}} // No hacemos nada al hacer clic en nuestro tablero
+            sunkShips={sunkShips.player}
           />
         </div>
-        <div className="board-wrapper">
-          <h4>Tablero Enemigo</h4>
-          <Board
-            board={enemyBoard}
-            onCellClick={handlePlayerShot} //usa handleplayershot que dentro esta handleEnemyBoardShot
-            highlightedCells={[]}
-            onCellHover={() => {}}
-            onBoardLeave={() => {}}
-            isGameMode={true}
+
+        <div className="board-section">
+          <h3>Tablero del oponente</h3>
+          <GameBoard
+            board={opponentBoard}
+            isPlayerBoard={false}
+            onCellClick={handleCellClick}
+            isPlayerTurn={isPlayerTurn && !gameOver}
+            sunkShips={sunkShips.opponent}
           />
         </div>
       </div>
+
+      {renderLastShot()}
+
+      {gameOver && (
+        <div className="game-over">
+          <h3>
+            {winner ? "¡Felicidades! Has ganado" : "Has perdido esta vez"}
+          </h3>
+          <button onClick={handleExitGame} className="exit-button">
+            Salir
+          </button>
+        </div>
+      )}
+
+      {!gameOver && (
+        <button onClick={handleExitGame} className="exit-button">
+          Abandonar juego
+        </button>
+      )}
     </div>
   );
 }

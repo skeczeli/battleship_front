@@ -15,12 +15,14 @@ import Ranking from "./pages/Ranking";
 import Navbar from "./components/Navbar";
 import ProfileEditor from "./pages/ProfileEditor";
 import Profile from "./pages/Profile";
+import SocketTest from "./pages/socketTest";
 
 function App() {
   return (
     <Router>
       <Navbar />
       <Routes>
+        <Route path="/socket-test" element={<SocketTest />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/editprofile" element={<ProfileEditor />} />
@@ -29,7 +31,7 @@ function App() {
         <Route path="/rules" element={<Rules />} />
         <Route path="/play" element={<Play />} />
         <Route path="/play-mode/bots/setup" element={<BotsSetup />} />
-        <Route path="/play-mode/bots/game" element={<BotsGame />} />
+        <Route path="/play-mode/bots/game/:gameId" element={<BotsGame />} />
         <Route path="/play-mode/random/setup" element={<RandomUserSetup />} />
         <Route path="/play-mode/random/game" element={<RandomUserGame />} />
         <Route path="/play-mode/private/setup" element={<PrivateRoomSetup />} />
