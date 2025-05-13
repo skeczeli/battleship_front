@@ -17,27 +17,35 @@ import ProfileEditor from "./pages/ProfileEditor";
 import Profile from "./pages/Profile";
 import SocketTest from "./pages/socketTest";
 
+import { UserProvider } from "./contexts/UserContext";
+
 function App() {
   return (
     <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/socket-test" element={<SocketTest />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/editprofile" element={<ProfileEditor />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/rules" element={<Rules />} />
-        <Route path="/play" element={<Play />} />
-        <Route path="/play-mode/bots/setup" element={<BotsSetup />} />
-        <Route path="/play-mode/bots/game/:gameId" element={<BotsGame />} />
-        <Route path="/play-mode/random/setup" element={<RandomUserSetup />} />
-        <Route path="/play-mode/random/game" element={<RandomUserGame />} />
-        <Route path="/play-mode/private/setup" element={<PrivateRoomSetup />} />
-        <Route path="/play-mode/private/game" element={<PrivateRoomGame />} />
-        <Route path="/ranking" element={<Ranking />} />
-      </Routes>
+      <UserProvider>
+        {" "}
+        <Navbar />
+        <Routes>
+          <Route path="/socket-test" element={<SocketTest />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/editprofile" element={<ProfileEditor />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/rules" element={<Rules />} />
+          <Route path="/play" element={<Play />} />
+          <Route path="/play-mode/bots/setup" element={<BotsSetup />} />
+          <Route path="/play-mode/bots/game/:gameId" element={<BotsGame />} />
+          <Route path="/play-mode/random/setup" element={<RandomUserSetup />} />
+          <Route path="/play-mode/random/game" element={<RandomUserGame />} />
+          <Route
+            path="/play-mode/private/setup"
+            element={<PrivateRoomSetup />}
+          />
+          <Route path="/play-mode/private/game" element={<PrivateRoomGame />} />
+          <Route path="/ranking" element={<Ranking />} />
+        </Routes>
+      </UserProvider>
     </Router>
   );
 }

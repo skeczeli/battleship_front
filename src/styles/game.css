@@ -1,0 +1,172 @@
+/* Estilos para el contenedor principal del juego */
+.game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* Título principal */
+.game-container h2 {
+  text-align: center;
+  color: #1a5b96;
+  margin-bottom: 20px;
+}
+
+/* Información del jugador */
+.player-info {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.player-info .guest-player {
+  color: #5b96c4;
+  font-weight: bold;
+}
+
+.player-info .auth-player {
+  color: #1a5b96;
+  font-weight: bold;
+}
+
+/* Estado del juego */
+.game-status {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.game-status p {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #1a5b96;
+}
+
+.game-status .win-status {
+  color: #28a745;
+}
+
+.game-status .lose-status {
+  color: #dc3545;
+}
+
+/* Contador de barcos */
+.ship-counter {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.ship-counter .counter {
+  font-weight: bold;
+}
+
+.player-counter .counter {
+  color: #dc3545;
+}
+
+.opponent-counter .counter {
+  color: #28a745;
+}
+
+/* Contenedor de los tableros - Esta es la parte más importante */
+.boards-container {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+/* Cada sección de tablero */
+.board-section {
+  flex: 0 1 auto;
+  min-width: 350px;
+  max-width: 45%;
+}
+
+.board-section h3 {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #1a5b96;
+}
+
+/* Estilos para el último disparo */
+.last-shot {
+  text-align: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.last-shot .hit {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.last-shot .miss {
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.shot-message {
+  font-weight: bold;
+  color: #1a5b96;
+}
+
+/* Estilos para el fin del juego */
+.game-over {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.game-over h3 {
+  margin-bottom: 15px;
+}
+
+/* Botón para abandonar o salir del juego */
+.exit-button {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 20px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.exit-button:hover {
+  background-color: #c82333;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .boards-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .board-section {
+    max-width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+/* Asegurarse de que los tableros tengan el mismo tamaño */
+.board-section table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Si necesitas estilos adicionales para las celdas de los tableros */
+.board-section td {
+  width: 35px;
+  height: 35px;
+  text-align: center;
+  vertical-align: middle;
+}

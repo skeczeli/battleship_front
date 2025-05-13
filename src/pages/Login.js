@@ -1,9 +1,13 @@
 // src/pages/Login.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { setPlayerId } from "services/PlayerService";
+import { useUser } from "contexts/UserContext";
+
 import "styles/register.css";
 
 function Login() {
+  const { login } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,10 +51,10 @@ function Login() {
         }
 
         const fullUser = { ...user, token };
-        localStorage.setItem("user", JSON.stringify(fullUser));
+        login(fullUser);
+        setPlayerId(user.username, false);
 
-        // Redireccionás recién después de guardar todo
-        window.location.href = "/";
+        navigate("/");
       } else {
         const errorData = await response.text();
         alert(errorData || "Error en la autenticación");

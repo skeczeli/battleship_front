@@ -1,27 +1,25 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Setup from "components/Setup";
-import {
-  getPlayerId,
-  getPlayerDisplayName,
-  isGuestPlayer,
-} from "services/PlayerService";
+import { getPlayerId } from "services/PlayerService";
+import { useUser } from "contexts/UserContext";
 import "styles/main.css";
 import "App.css";
 
 function BotsSetup() {
   const navigate = useNavigate();
   const totalShips = 5;
-  const playerId = getPlayerId(); // Obtenemos el ID del jugador de forma consistente
+  const { user } = useUser();
 
   const handleConfirm = async (board, placedShips) => {
+    const playerId = getPlayerId();
     if (placedShips.length < totalShips) {
       alert("Coloca todos los barcos antes de empezar el juego.");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/game/setup", {
+      const response = await fetch("http://localhost:8080/api/game/setup/bot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -33,6 +31,8 @@ function BotsSetup() {
 
       const data = await response.json();
       const { gameId } = data;
+
+      sessionStorage.setItem("playerBoard", JSON.stringify(board));
 
       // Navegar a la pantalla de juego con los datos necesarios
       navigate(`/play-mode/bots/game/${gameId}`, {
@@ -50,8 +50,8 @@ function BotsSetup() {
       <div className="player-info">
         <p>
           Jugando como:{" "}
-          <span className={isGuestPlayer() ? "guest-player" : "auth-player"}>
-            {getPlayerDisplayName()}
+          <span className={user ? "auth-player" : "guest-player"}>
+            {user?.username || "Invitado"}
           </span>
         </p>
       </div>

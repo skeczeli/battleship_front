@@ -3,16 +3,21 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
-import PlayerService from "services/PlayerService";
+import { getPlayerId } from "services/PlayerService";
+import { useUser } from "contexts/UserContext";
+import "styles/game.css";
 
 function BotsGame() {
   const location = useLocation();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const playerId = PlayerService.getPlayerId();
+  const playerId = getPlayerId();
+  const { user } = useUser();
 
   // Obtener el tablero inicial del estado de navegación
-  const initialPlayerBoard = location.state?.playerBoard;
+  const initialPlayerBoard =
+    location.state?.playerBoard ||
+    JSON.parse(sessionStorage.getItem("playerBoard") || "null");
 
   // Estados para los tableros
   const [playerBoard, setPlayerBoard] = useState(initialPlayerBoard || null);
@@ -37,9 +42,15 @@ function BotsGame() {
 
   // Referencia al cliente STOMP
   const stompClient = useRef(null);
+  const connectedRef = useRef(false);
 
   // Validar que tenemos el tablero y el gameId
   useEffect(() => {
+    if (!playerId) {
+      alert("Identidad del jugador no disponible");
+      navigate("/play-mode/bots/setup");
+    }
+
     if (!initialPlayerBoard) {
       alert(
         "No hay configuración de tablero. Volviendo a la pantalla de configuración."
@@ -53,13 +64,19 @@ function BotsGame() {
       navigate("/play-mode/bots/setup");
       return;
     }
-  }, [initialPlayerBoard, gameId, navigate]);
+  }, [playerId, initialPlayerBoard, gameId, navigate]);
 
   // Inicializar la conexión WebSocket
   useEffect(() => {
     if (!initialPlayerBoard || !gameId) return;
+    if (connectedRef.current) return;
+    connectedRef.current = true;
 
-    console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
+    console.log(
+      `Conectando al juego ${gameId} como jugador ${
+        user?.username || "Invitado"
+      }`
+    );
 
     // Crear conexión SockJS
     const socket = new SockJS("http://localhost:8080/ws");
@@ -73,55 +90,36 @@ function BotsGame() {
     });
 
     // Definir las funciones manejadoras dentro del useEffect
-    // Función para manejar el inicio del juego
-    const handleGameStart = (data) => {
-      setIsPlayerTurn(data.turn === playerId);
-      setGameStatus(data.turn === playerId ? "Tu turno" : "Turno del oponente");
-    };
-
-    // Función para manejar el resultado de un disparo
     const handleShotResult = (data) => {
-      if (data.playerId === playerId) {
-        // Actualizar tablero del oponente con nuestro disparo
-        const newOpponentBoard = [...opponentBoard];
-        const { row, col, hit } = data;
-        newOpponentBoard[row][col] = hit ? "hit" : "miss";
-        setOpponentBoard(newOpponentBoard);
+      // 1. Resolución del disparo del jugador
+      const newOpponentBoard = [...opponentBoard];
+      const { row, col, hit } = data;
+      newOpponentBoard[row][col] = hit ? "hit" : "miss";
+      setOpponentBoard(newOpponentBoard);
 
-        // Verificar si se hundió un barco
-        if (data.shipSunk) {
-          // Agregar el barco a la lista de barcos hundidos del oponente
-          setSunkShips((prev) => ({
-            ...prev,
-            opponent: [...prev.opponent, data.shipId],
-          }));
+      if (data.shipSunk) {
+        setSunkShips((prev) => ({
+          ...prev,
+          opponent: [...prev.opponent, data.shipId],
+        }));
+      }
 
-          // Si el servidor proporciona las celdas del barco hundido, las marcamos
-          if (data.shipCells) {
-            data.shipCells.forEach((cell) => {
-              const [r, c] = cell;
-              newOpponentBoard[r][c] = "sunk"; // Marca especial para celdas de barcos hundidos
-            });
-          }
-        }
+      setLastShot({
+        row,
+        col,
+        hit,
+        player: "player",
+        message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
+      });
 
-        setLastShot({
-          row,
-          col,
-          hit,
-          player: "player",
-          message: data.shipSunk ? `¡Hundiste un barco!` : undefined,
-        });
-      } else {
-        // Actualizar nuestro tablero con el disparo del oponente
+      // 2. Timeout antes del disparo del bot
+      setTimeout(() => {
         const newPlayerBoard = [...playerBoard];
-        const { row, col, hit } = data;
-        newPlayerBoard[row][col] = hit ? "hit" : "miss";
+        const { rowBot, colBot, hitBot } = data;
+        newPlayerBoard[rowBot][colBot] = hitBot ? "hit" : "miss";
         setPlayerBoard(newPlayerBoard);
 
-        // Verificar si se hundió un barco del jugador
-        if (data.shipSunk) {
-          // Agregar el barco a la lista de barcos hundidos del jugador
+        if (data.shipSunkBot) {
           setSunkShips((prev) => ({
             ...prev,
             player: [...prev.player, data.shipId],
@@ -129,19 +127,20 @@ function BotsGame() {
         }
 
         setLastShot({
-          row,
-          col,
-          hit,
+          row: rowBot,
+          col: colBot,
+          hit: hitBot,
           player: "opponent",
-          message: data.shipSunk ? `¡El oponente hundió tu barco!` : undefined,
+          message: data.shipSunkBot
+            ? "¡El oponente hundió tu barco!"
+            : undefined,
         });
-      }
 
-      // Actualizar turno
-      setIsPlayerTurn(data.nextTurn === playerId);
-      setGameStatus(
-        data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
-      );
+        setIsPlayerTurn(data.nextTurn === playerId);
+        setGameStatus(
+          data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
+        );
+      }, 2000); // 2s de delay
     };
 
     // Función para manejar el fin del juego
@@ -149,12 +148,16 @@ function BotsGame() {
       setGameOver(true);
       setWinner(data.winner === playerId);
       setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+      sessionStorage.removeItem("playerBoard");
     };
 
     // Al establecer conexión
     client.onConnect = () => {
       console.log("Conectado al servidor WebSocket");
       setGameStatus("Conectado. Esperando inicio del juego...");
+
+      setIsPlayerTurn(true);
+      setGameStatus("Tu turno");
 
       // Suscribirse a mensajes del juego
       client.subscribe(`/topic/game/${gameId}`, (message) => {
@@ -163,9 +166,6 @@ function BotsGame() {
 
         // Manejar diferentes tipos de mensajes
         switch (data.type) {
-          case "GAME_START":
-            handleGameStart(data);
-            break;
           case "SHOT_RESULT":
             handleShotResult(data);
             break;
@@ -175,12 +175,6 @@ function BotsGame() {
           default:
             console.log("Tipo de mensaje desconocido:", data.type);
         }
-      });
-
-      // Notificar que el jugador está listo -> check?
-      client.publish({
-        destination: `/app/game/${gameId}/join`,
-        body: JSON.stringify({ playerId, gameId }),
       });
     };
 
@@ -196,25 +190,13 @@ function BotsGame() {
 
     // Limpiar al desmontar
     return () => {
-      if (client.connected) {
-        client.deactivate();
+      if (stompClient.current && stompClient.current.connected) {
+        stompClient.current.deactivate();
+        stompClient.current = null;
+        connectedRef.current = false;
       }
     };
-  }, [
-    gameId,
-    playerId,
-    initialPlayerBoard,
-    playerBoard,
-    opponentBoard,
-    setPlayerBoard,
-    setOpponentBoard,
-    setLastShot,
-    setIsPlayerTurn,
-    setGameStatus,
-    setSunkShips,
-    setGameOver,
-    setWinner,
-  ]);
+  }, [gameId, playerId, initialPlayerBoard, playerBoard, opponentBoard, user]);
 
   // Manejar click en celda para disparar
   const handleCellClick = (row, col) => {
@@ -222,9 +204,7 @@ function BotsGame() {
     if (
       !isPlayerTurn ||
       gameOver ||
-      opponentBoard[row][col] === "hit" ||
-      opponentBoard[row][col] === "miss" ||
-      opponentBoard[row][col] === "sunk"
+      ["hit", "miss"].includes(opponentBoard[row][col])
     ) {
       return;
     }
@@ -255,6 +235,7 @@ function BotsGame() {
       });
       stompClient.current.deactivate();
     }
+    sessionStorage.removeItem("playerBoard");
     navigate("/");
   };
 
@@ -321,12 +302,8 @@ function BotsGame() {
       <div className="player-info">
         <p>
           Jugando como:{" "}
-          <span
-            className={
-              PlayerService.isGuestPlayer() ? "guest-player" : "auth-player"
-            }
-          >
-            {PlayerService.getPlayerDisplayName()}
+          <span className={user ? "auth-player" : "guest-player"}>
+            {user?.username || "Invitado"}
           </span>
         </p>
       </div>

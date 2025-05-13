@@ -1,24 +1,16 @@
-// src/components/Navbar.js
-import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useUser } from "contexts/UserContext";
 
 function Navbar() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-  }, []);
+  const { user, logout } = useUser();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    window.location.href = "/";
+    logout();
+    navigate("/");
   };
-
-  const location = useLocation();
 
   return (
     <header className="navbar">
@@ -36,7 +28,6 @@ function Navbar() {
             <Link to={`/profile/${user.username}`}>
               <button className="button">Perfil ({user.username})</button>
             </Link>
-
             <button className="button" onClick={handleLogout}>
               Log out
             </button>
