@@ -11,12 +11,32 @@ function BotsSetup() {
   const totalShips = 5;
   const { user } = useUser();
 
+  const shipMap = {
+    portaaviones: 1,
+    acorazado: 2,
+    submarino: 3,
+    destructor: 4,
+    fragata: 5,
+  };
+  
+  const mapBoardToIntegers = (board) => {
+    return board.map((row) =>
+      row.map((cell) =>
+        cell === null ? null : shipMap[cell] ?? null
+      )
+    );
+  };
+  
+
   const handleConfirm = async (board, placedShips) => {
-    const playerId = getPlayerId();
+    const playerId = getPlayerId(user);
+
     if (placedShips.length < totalShips) {
       alert("Coloca todos los barcos antes de empezar el juego.");
       return;
     }
+
+    const numericBoard = mapBoardToIntegers(board);
 
     try {
       const response = await fetch("http://localhost:8080/api/game/setup/bot", {
@@ -24,7 +44,7 @@ function BotsSetup() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ board, playerId }),
+        body: JSON.stringify({ board: numericBoard, playerId }),
       });
 
       if (!response.ok) throw new Error("Error al crear el juego.");
@@ -32,7 +52,7 @@ function BotsSetup() {
       const data = await response.json();
       const { gameId } = data;
 
-      sessionStorage.setItem("playerBoard", JSON.stringify(board));
+      sessionStorage.setItem("playerBoard", JSON.stringify(numericBoard));
 
       // Navegar a la pantalla de juego con los datos necesarios
       navigate(`/play-mode/bots/game/${gameId}`, {

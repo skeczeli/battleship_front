@@ -11,8 +11,9 @@ function BotsGame() {
   const location = useLocation();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const playerId = getPlayerId();
   const { user } = useUser();
+  const playerId = getPlayerId(user);
+
 
   // Obtener el tablero inicial del estado de navegación
   const initialPlayerBoard =

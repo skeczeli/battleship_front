@@ -11,8 +11,9 @@ function BotsGame() {
   const location = useLocation();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const playerId = getPlayerId();
   const { user } = useUser();
+  const playerId = getPlayerId(user);
+
 
   // Obtener el tablero inicial del estado de navegación
   const initialPlayerBoard =
@@ -93,8 +94,8 @@ function BotsGame() {
     const handleShotResult = (data) => {
       // 1. Resolución del disparo del jugador
       const newOpponentBoard = [...opponentBoard];
-      const { row, col, hit } = data;
-      newOpponentBoard[row][col] = hit ? "hit" : "miss";
+      const { row, col, hit, gameOver, winner } = data; 
+      newOpponentBoard[row][col] = hit;
       setOpponentBoard(newOpponentBoard);
 
       if (data.shipSunk) {
@@ -112,19 +113,29 @@ function BotsGame() {
         message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
       });
 
+      if (gameOver) {
+        if (winner === null) {
+          console.error("Error: Winner is null despite gameOver being true.");
+          alert("Error: Winner is null. Please check the game logic.");
+          return;
+        }
+        handleGameOver(winner);
+        return;
+      }
+
       // 2. Timeout antes del disparo del bot
       setTimeout(() => {
         const newPlayerBoard = [...playerBoard];
-        const { rowBot, colBot, hitBot } = data;
-        newPlayerBoard[rowBot][colBot] = hitBot ? "hit" : "miss";
+        const { rowBot, colBot, hitBot, gameOverBot } = data;
+        newPlayerBoard[rowBot][colBot] = hitBot;
         setPlayerBoard(newPlayerBoard);
 
         if (data.shipSunkBot) {
           setSunkShips((prev) => ({
             ...prev,
-            player: [...prev.player, data.shipId],
+            player: [...prev.player, data.shipIdBot],
           }));
-        }
+        }        
 
         setLastShot({
           row: rowBot,
@@ -136,18 +147,23 @@ function BotsGame() {
             : undefined,
         });
 
-        setIsPlayerTurn(data.nextTurn === playerId);
+        if (gameOverBot) {
+          handleGameOver(data);
+          return;
+        }
+
+        setIsPlayerTurn(true);
         setGameStatus(
-          data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
+          "Tu turno"
         );
       }, 2000); // 2s de delay
     };
 
     // Función para manejar el fin del juego
-    const handleGameOver = (data) => {
+    const handleGameOver = (winner) => {
       setGameOver(true);
-      setWinner(data.winner === playerId);
-      setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+      setWinner(winner === playerId); 
+      setGameStatus(winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
       sessionStorage.removeItem("playerBoard");
     };
 
@@ -164,17 +180,7 @@ function BotsGame() {
         const data = JSON.parse(message.body);
         console.log("Mensaje recibido:", data);
 
-        // Manejar diferentes tipos de mensajes
-        switch (data.type) {
-          case "SHOT_RESULT":
-            handleShotResult(data);
-            break;
-          case "GAME_OVER":
-            handleGameOver(data);
-            break;
-          default:
-            console.log("Tipo de mensaje desconocido:", data.type);
-        }
+        handleShotResult(data); // ya no se recibe data.type, el shotResult avisa si termino el juego.
       });
     };
 
@@ -239,26 +245,25 @@ function BotsGame() {
     navigate("/");
   };
 
-  // Renderizar el último disparo
   const renderLastShot = () => {
-    if (!lastShot) return null;
+  if (!lastShot) return null;
 
-    const { row, col, hit, player, message } = lastShot;
-    const playerText =
-      player === "player" ? "Tu disparo" : "Disparo del oponente";
-    const resultText = hit ? "¡Impacto!" : "Agua";
-    const position = `[${String.fromCharCode(65 + row)}${col + 1}]`;
+  const { row, col, hit, player, message } = lastShot;
+  const isHit = hit === "hit";
+  const resultText = isHit ? "¡Impacto!" : "Agua";
+  const playerText = player === "player" ? "Tu disparo" : "Disparo del oponente";
+  const position = `[${String.fromCharCode(65 + col)}${row + 1}]`;
 
-    return (
-      <div className="last-shot">
-        <p>
-          {playerText} en {position}:{" "}
-          <span className={hit ? "hit" : "miss"}>{resultText}</span>
-        </p>
-        {message && <p className="shot-message">{message}</p>}
-      </div>
-    );
-  };
+  return (
+    <div className="last-shot">
+      <p>
+        {playerText} en {position}:{" "}
+        <span className={isHit ? "hit" : "miss"}>{resultText}</span>
+      </p>
+      {message && <p className="shot-message">{message}</p>}
+    </div>
+  );
+};
 
   // Renderizar contador de barcos hundidos
   const renderShipCounter = () => {

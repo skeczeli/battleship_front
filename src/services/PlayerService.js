@@ -4,21 +4,17 @@ const generateGuestId = () => {
   return `guest_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 };
 
-const getPlayerId = () => {
-  const localId = localStorage.getItem(PLAYER_ID_KEY);
+const getPlayerId = (user) => {
+  if (user?.username) return user.username;
+
   const sessionId = sessionStorage.getItem(PLAYER_ID_KEY);
-
-  // PRIORIDAD: si hay usuario logueado, usá eso
-  if (localId) return localId;
-
-  // Si no hay login, usá el invitado
   if (sessionId) return sessionId;
 
-  // Generar nuevo guest
   const guestId = generateGuestId();
   sessionStorage.setItem(PLAYER_ID_KEY, guestId);
   return guestId;
 };
+
 
 const setPlayerId = (id, isGuest = false) => {
   sessionStorage.removeItem(PLAYER_ID_KEY);
@@ -36,20 +32,8 @@ const clearPlayerId = () => {
   localStorage.removeItem(PLAYER_ID_KEY);
 };
 
-const isGuestPlayer = () => {
-  const id = getPlayerId();
-  return id.startsWith("guest_");
-};
-
-const getPlayerDisplayName = () => {
-  const id = getPlayerId();
-  return isGuestPlayer() ? "Invitado" : id;
-};
-
 export {
   getPlayerId,
   setPlayerId,
   clearPlayerId,
-  isGuestPlayer,
-  getPlayerDisplayName,
 };
