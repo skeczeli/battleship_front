@@ -56,23 +56,23 @@
 
 /* Colores específicos para cada tipo de barco en la lista */
 .ship-item[data-ship-id="portaaviones"] {
-  border-left: 4px solid #ff5733;
-}
-
-.ship-item[data-ship-id="acorazado"] {
-  border-left: 4px solid #33a2ff;
-}
-
-.ship-item[data-ship-id="submarino"] {
-  border-left: 4px solid rgb(255, 196, 0);
-}
-
-.ship-item[data-ship-id="destructor"] {
   border-left: 4px solid #ff33a2;
 }
 
-.ship-item[data-ship-id="lancha"] {
+.ship-item[data-ship-id="acorazado"] {
   border-left: 4px solid #a233ff;
+}
+
+.ship-item[data-ship-id="submarino"] {
+  border-left: 4px solid #00afb9;
+}
+
+.ship-item[data-ship-id="destructor"] {
+  border-left: 4px solid #7cb518;
+}
+
+.ship-item[data-ship-id="lancha"] {
+  border-left: 4px solid #ff9505;
 }
 
 /* Botón de eliminar */
@@ -112,11 +112,6 @@
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.options button:hover {
-  background-color: #005fa3;
-  transform: scale(1.05);
 }
 
 .options button:active {

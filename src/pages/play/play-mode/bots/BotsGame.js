@@ -3,7 +3,6 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
-import { getPlayerId } from "services/PlayerService";
 import { useUser } from "contexts/UserContext";
 import "styles/game.css";
 
@@ -11,16 +10,12 @@ function BotsGame() {
   const location = useLocation();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const playerId = getPlayerId(user);
+  const { user, playerId, isReady } = useUser();
 
-
-  // Obtener el tablero inicial del estado de navegación
   const initialPlayerBoard =
     location.state?.playerBoard ||
     JSON.parse(sessionStorage.getItem("playerBoard") || "null");
 
-  // Estados para los tableros
   const [playerBoard, setPlayerBoard] = useState(initialPlayerBoard || null);
   const [opponentBoard, setOpponentBoard] = useState(
     Array(10)
@@ -28,34 +23,27 @@ function BotsGame() {
       .map(() => Array(10).fill(null))
   );
 
-  // Estados del juego
   const [gameStatus, setGameStatus] = useState("Conectando...");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [lastShot, setLastShot] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
 
-  // Estado para rastrear los barcos hundidos
-  const [sunkShips, setSunkShips] = useState({
-    player: [], // IDs de los barcos del jugador que han sido hundidos
-    opponent: [], // IDs de los barcos del oponente que han sido hundidos
-  });
-
-  // Referencia al cliente STOMP
   const stompClient = useRef(null);
   const connectedRef = useRef(false);
 
-  // Validar que tenemos el tablero y el gameId
   useEffect(() => {
+    if (!isReady) return;
+
     if (!playerId) {
       alert("Identidad del jugador no disponible");
       navigate("/play-mode/bots/setup");
+      return;
     }
 
     if (!initialPlayerBoard) {
-      alert(
-        "No hay configuración de tablero. Volviendo a la pantalla de configuración."
-      );
+      alert("No hay configuración de tablero.");
       navigate("/play-mode/bots/setup");
       return;
     }
@@ -65,24 +53,17 @@ function BotsGame() {
       navigate("/play-mode/bots/setup");
       return;
     }
-  }, [playerId, initialPlayerBoard, gameId, navigate]);
+  }, [isReady, playerId, initialPlayerBoard, gameId, navigate]);
 
-  // Inicializar la conexión WebSocket
   useEffect(() => {
-    if (!initialPlayerBoard || !gameId) return;
+    if (!isReady || !initialPlayerBoard || !gameId || !playerId) return;
     if (connectedRef.current) return;
     connectedRef.current = true;
 
-    console.log(
-      `Conectando al juego ${gameId} como jugador ${
-        user?.username || "Invitado"
-      }`
-    );
+    console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
 
-    // Crear conexión SockJS
     const socket = new SockJS("http://localhost:8080/ws");
 
-    // Crear cliente STOMP sobre SockJS
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
@@ -90,13 +71,13 @@ function BotsGame() {
       heartbeatOutgoing: 4000,
     });
 
-    // Definir las funciones manejadoras dentro del useEffect
     const handleShotResult = (data) => {
-      // 1. Resolución del disparo del jugador
       const newOpponentBoard = [...opponentBoard];
-      const { row, col, hit, gameOver, winner } = data; 
+      const { row, col, hit, gameOver, winner } = data;
       newOpponentBoard[row][col] = hit;
       setOpponentBoard(newOpponentBoard);
+
+      console.log(data);
 
       if (data.shipSunk) {
         setSunkShips((prev) => ({
@@ -114,16 +95,10 @@ function BotsGame() {
       });
 
       if (gameOver) {
-        if (winner === null) {
-          console.error("Error: Winner is null despite gameOver being true.");
-          alert("Error: Winner is null. Please check the game logic.");
-          return;
-        }
         handleGameOver(winner);
         return;
       }
 
-      // 2. Timeout antes del disparo del bot
       setTimeout(() => {
         const newPlayerBoard = [...playerBoard];
         const { rowBot, colBot, hitBot, gameOverBot } = data;
@@ -135,7 +110,7 @@ function BotsGame() {
             ...prev,
             player: [...prev.player, data.shipIdBot],
           }));
-        }        
+        }
 
         setLastShot({
           row: rowBot,
@@ -148,91 +123,78 @@ function BotsGame() {
         });
 
         if (gameOverBot) {
-          handleGameOver(data);
+          handleGameOver(data.winner);
           return;
         }
 
         setIsPlayerTurn(true);
-        setGameStatus(
-          "Tu turno"
-        );
-      }, 2000); // 2s de delay
+        setGameStatus("Tu turno");
+      }, 2000);
     };
 
-    // Función para manejar el fin del juego
-    const handleGameOver = (winner) => {
+    const handleGameOver = (winnerId) => {
       setGameOver(true);
-      setWinner(winner === playerId); 
-      setGameStatus(winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+      setWinner(winnerId === playerId);
+      setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
       sessionStorage.removeItem("playerBoard");
     };
 
-    // Al establecer conexión
     client.onConnect = () => {
       console.log("Conectado al servidor WebSocket");
-      setGameStatus("Conectado. Esperando inicio del juego...");
-
+      setGameStatus("Conectado. Tu turno");
       setIsPlayerTurn(true);
-      setGameStatus("Tu turno");
 
-      // Suscribirse a mensajes del juego
       client.subscribe(`/topic/game/${gameId}`, (message) => {
         const data = JSON.parse(message.body);
-        console.log("Mensaje recibido:", data);
-
-        handleShotResult(data); // ya no se recibe data.type, el shotResult avisa si termino el juego.
+        handleShotResult(data);
       });
     };
 
-    // Manejar errores de conexión
     client.onStompError = (error) => {
       console.error("Error en la conexión:", error);
       setGameStatus("Error de conexión con el servidor");
     };
 
-    // Iniciar conexión
     client.activate();
     stompClient.current = client;
 
-    // Limpiar al desmontar
     return () => {
       if (stompClient.current && stompClient.current.connected) {
         stompClient.current.deactivate();
         stompClient.current = null;
-        connectedRef.current = false;
       }
     };
-  }, [gameId, playerId, initialPlayerBoard, playerBoard, opponentBoard, user]);
+  }, [
+    isReady,
+    gameId,
+    playerId,
+    initialPlayerBoard,
+    playerBoard,
+    opponentBoard,
+  ]);
 
-  // Manejar click en celda para disparar
   const handleCellClick = (row, col) => {
-    // Solo permitir disparar si es el turno del jugador y no hay disparo previo en esa celda
     if (
       !isPlayerTurn ||
       gameOver ||
       ["hit", "miss"].includes(opponentBoard[row][col])
-    ) {
+    )
       return;
-    }
 
-    // Verificar conexión
     if (!stompClient.current || !stompClient.current.connected) {
       alert("No hay conexión con el servidor");
       return;
     }
 
-    // Enviar disparo al servidor
     stompClient.current.publish({
       destination: `/app/game/${gameId}/shot`,
       body: JSON.stringify({ row, col, playerId, gameId }),
     });
 
-    // Deshabilitar temporalmente el turno hasta recibir respuesta
     setIsPlayerTurn(false);
     setGameStatus("Esperando respuesta...");
   };
 
-  // Manejar abandono de juego
   const handleExitGame = () => {
     if (stompClient.current && stompClient.current.connected) {
       stompClient.current.publish({
@@ -246,29 +208,28 @@ function BotsGame() {
   };
 
   const renderLastShot = () => {
-  if (!lastShot) return null;
+    if (!lastShot) return null;
 
-  const { row, col, hit, player, message } = lastShot;
-  const isHit = hit === "hit";
-  const resultText = isHit ? "¡Impacto!" : "Agua";
-  const playerText = player === "player" ? "Tu disparo" : "Disparo del oponente";
-  const position = `[${String.fromCharCode(65 + col)}${row + 1}]`;
+    const { row, col, hit, player, message } = lastShot;
+    const isHit = hit === "hit";
+    const resultText = isHit ? "¡Impacto!" : "Agua";
+    const playerText =
+      player === "player" ? "Tu disparo" : "Disparo del oponente";
+    const position = `[${String.fromCharCode(65 + col)}${row + 1}]`;
 
-  return (
-    <div className="last-shot">
-      <p>
-        {playerText} en {position}:{" "}
-        <span className={isHit ? "hit" : "miss"}>{resultText}</span>
-      </p>
-      {message && <p className="shot-message">{message}</p>}
-    </div>
-  );
-};
+    return (
+      <div className="last-shot">
+        <p>
+          {playerText} en {position}:{" "}
+          <span className={isHit ? "hit" : "miss"}>{resultText}</span>
+        </p>
+        {message && <p className="shot-message">{message}</p>}
+      </div>
+    );
+  };
 
-  // Renderizar contador de barcos hundidos
   const renderShipCounter = () => {
-    const totalShips = 5; // Ajusta este número según la cantidad de barcos en tu juego
-
+    const totalShips = 5;
     return (
       <div className="ship-counter">
         <div className="player-counter">
@@ -291,11 +252,10 @@ function BotsGame() {
     );
   };
 
-  // Mostrar pantalla de carga si no hay tablero
-  if (!playerBoard) {
+  if (!isReady || !playerBoard) {
     return (
       <div className="game-container">
-        <h2>Cargando juego...</h2>
+        <h2>{!isReady ? "Cargando jugador..." : "Cargando juego..."}</h2>
       </div>
     );
   }
@@ -327,7 +287,7 @@ function BotsGame() {
           <GameBoard
             board={playerBoard}
             isPlayerBoard={true}
-            onCellClick={() => {}} // No hacemos nada al hacer clic en nuestro tablero
+            onCellClick={() => {}}
             sunkShips={sunkShips.player}
           />
         </div>
@@ -346,7 +306,7 @@ function BotsGame() {
 
       {renderLastShot()}
 
-      {gameOver && (
+      {gameOver ? (
         <div className="game-over">
           <h3>
             {winner ? "¡Felicidades! Has ganado" : "Has perdido esta vez"}
@@ -355,9 +315,7 @@ function BotsGame() {
             Salir
           </button>
         </div>
-      )}
-
-      {!gameOver && (
+      ) : (
         <button onClick={handleExitGame} className="exit-button">
           Abandonar juego
         </button>

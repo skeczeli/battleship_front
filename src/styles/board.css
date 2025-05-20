@@ -45,30 +45,31 @@
 }
 
 .cell:hover {
-  background-color: #3182ce;
+  /* Permitir solo para enemy board */
+  background-color: #429bee88;
   transform: scale(1.05);
   z-index: 1;
 }
 
 /* Colores específicos para cada tipo de barco */
 .cell.ship-portaaviones {
-  background-color: #ff5733;
-}
-
-.cell.ship-acorazado {
-  background-color: #33a2ff;
-}
-
-.cell.ship-submarino {
-  background-color: rgb(74, 200, 69);
-}
-
-.cell.ship-destructor {
   background-color: #ff33a2;
 }
 
-.cell.ship-lancha {
+.cell.ship-acorazado {
   background-color: #a233ff;
+}
+
+.cell.ship-submarino {
+  background-color: #00afb9;
+}
+
+.cell.ship-destructor {
+  background-color: #7cb518;
+}
+
+.cell.ship-lancha {
+  background-color: #ff9505;
 }
 
 .cell.highlight {
@@ -79,17 +80,17 @@
 
 /* Mantener colores de barco incluso cuando están resaltados */
 .cell.highlight.ship-portaaviones {
-  background-color: #ff5733;
+  background-color: #ff5733; /*#7CB518*/
   border-color: #ffaa90;
 }
 
 .cell.highlight.ship-acorazado {
-  background-color: #33a2ff;
+  background-color: #33a2ff; /*FF9505*/
   border-color: #90d4ff;
 }
 
 .cell.highlight.ship-submarino {
-  background-color: rgb(255, 196, 0);
+  background-color: rgb(255, 196, 0); /*00AFB9*/
   border-color: rgb(255, 225, 128);
 }
 
@@ -105,20 +106,11 @@
 
 /* Estilos para miss y hit en el tablero del oponente */
 .cell[data-state="miss"] {
-  background-color: #4299e1;
+  background-color: #64b7f77f;
 }
 
 .cell[data-state="hit"] {
   background-color: #f56565;
-}
-
-/* Opcional: Para debugging */
-.cell-debug {
-  font-size: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
 }
 
 /* Añade estos estilos a tu archivo board.css */

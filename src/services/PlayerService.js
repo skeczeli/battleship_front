@@ -15,7 +15,6 @@ const getPlayerId = (user) => {
   return guestId;
 };
 
-
 const setPlayerId = (id, isGuest = false) => {
   sessionStorage.removeItem(PLAYER_ID_KEY);
   localStorage.removeItem(PLAYER_ID_KEY);
@@ -32,8 +31,4 @@ const clearPlayerId = () => {
   localStorage.removeItem(PLAYER_ID_KEY);
 };
 
-export {
-  getPlayerId,
-  setPlayerId,
-  clearPlayerId,
-};
+export { getPlayerId, setPlayerId, clearPlayerId };

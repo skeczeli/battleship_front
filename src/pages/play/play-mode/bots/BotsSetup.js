@@ -18,15 +18,12 @@ function BotsSetup() {
     destructor: 4,
     fragata: 5,
   };
-  
+
   const mapBoardToIntegers = (board) => {
     return board.map((row) =>
-      row.map((cell) =>
-        cell === null ? null : shipMap[cell] ?? null
-      )
+      row.map((cell) => (cell === null ? null : shipMap[cell] ?? null))
     );
   };
-  
 
   const handleConfirm = async (board, placedShips) => {
     const playerId = getPlayerId(user);
