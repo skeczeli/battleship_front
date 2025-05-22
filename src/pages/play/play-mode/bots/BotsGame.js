@@ -129,7 +129,7 @@ function BotsGame() {
 
         setIsPlayerTurn(true);
         setGameStatus("Tu turno");
-      }, 2000);
+      }, 100);
     };
 
     const handleGameOver = (winnerId) => {

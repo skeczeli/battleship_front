@@ -16,7 +16,7 @@ function BotsSetup() {
     acorazado: 2,
     submarino: 3,
     destructor: 4,
-    fragata: 5,
+    lancha: 5,
   };
 
   const mapBoardToIntegers = (board) => {
@@ -34,6 +34,9 @@ function BotsSetup() {
     }
 
     const numericBoard = mapBoardToIntegers(board);
+
+    console.log("Tablero visual (con nombres):", board);
+    console.log("Tablero convertido a IDs:", numericBoard);
 
     try {
       const response = await fetch("http://localhost:8080/api/game/setup/bot", {
