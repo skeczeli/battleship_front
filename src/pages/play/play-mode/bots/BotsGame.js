@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
@@ -7,77 +7,59 @@ import { useUser } from "contexts/UserContext";
 import "styles/game.css";
 
 function BotsGame() {
-  const location = useLocation();
   const { gameId } = useParams();
-  const navigate = useNavigate();
   const { user, playerId, isReady } = useUser();
+  const navigate = useNavigate();
 
-  const initialPlayerBoard =
-    location.state?.playerBoard ||
-    JSON.parse(sessionStorage.getItem("playerBoard") || "null");
-
-  const [playerBoard, setPlayerBoard] = useState(initialPlayerBoard || null);
-  const [opponentBoard, setOpponentBoard] = useState(
-    Array(10)
-      .fill()
-      .map(() => Array(10).fill(null))
-  );
-
-  const [gameStatus, setGameStatus] = useState("Conectando...");
-  const [isPlayerTurn, setIsPlayerTurn] = useState(false);
+  const [playerBoard, setPlayerBoard] = useState(null);
+  const [opponentBoard, setOpponentBoard] = useState(null);
+  const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
   const [lastShot, setLastShot] = useState(null);
+  const [gameStatus, setGameStatus] = useState("Cargando...");
+  const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
-  const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
 
   const stompClient = useRef(null);
-  const connectedRef = useRef(false);
+  const stompInitialized = useRef(false);
+  const socket = useRef(null);
 
-  useEffect(() => {
-    if (!isReady) return;
+  const mapBoardToNames = (board) => {
+    const shipIdToName = {
+      1: "portaaviones",
+      2: "acorazado",
+      3: "submarino",
+      4: "destructor",
+      5: "lancha",
+    };
+    return board.map((row) =>
+      row.map((cell) => {
+        if (cell === null) return null;
+        if (cell === 0) return "miss";
+        if (cell < 0) return "hit";
+        return shipIdToName[cell] ?? null;
+      })
+    );
+  };
 
-    if (!playerId) {
-      alert("Identidad del jugador no disponible");
-      navigate("/play-mode/bots/setup");
-      return;
-    }
+  const handleGameOver = (winnerId) => {
+    setGameOver(true);
+    setWinner(winnerId === playerId);
+    setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
+    sessionStorage.removeItem("playerBoard"); // remove?
+  };
 
-    if (!initialPlayerBoard) {
-      alert("No hay configuración de tablero.");
-      navigate("/play-mode/bots/setup");
-      return;
-    }
-
-    if (!gameId) {
-      alert("ID de juego no disponible");
-      navigate("/play-mode/bots/setup");
-      return;
-    }
-  }, [isReady, playerId, initialPlayerBoard, gameId, navigate]);
-
-  useEffect(() => {
-    if (!isReady || !initialPlayerBoard || !gameId || !playerId) return;
-    if (connectedRef.current) return;
-    connectedRef.current = true;
-
-    console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
-
-    const socket = new SockJS("http://localhost:8080/ws");
-
-    const client = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
-
-    const handleShotResult = (data) => {
-      const newOpponentBoard = [...opponentBoard];
-      const { row, col, hit, gameOver, winner } = data;
-      newOpponentBoard[row][col] = hit;
-      setOpponentBoard(newOpponentBoard);
-
-      console.log(data);
+  const handleShotResult = useCallback(
+    (data) => {
+      console.log("🔵 Resultado del disparo recibido:", data);
+      setOpponentBoard((prev) => {
+        const updated = prev.map((row, r) =>
+          row.map((cell, c) =>
+            r === data.row && c === data.col ? data.hit : cell
+          )
+        );
+        return updated;
+      });
 
       if (data.shipSunk) {
         setSunkShips((prev) => ({
@@ -87,23 +69,25 @@ function BotsGame() {
       }
 
       setLastShot({
-        row,
-        col,
-        hit,
+        row: data.row,
+        col: data.col,
+        hit: data.hit,
         player: "player",
         message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
       });
 
-      if (gameOver) {
-        handleGameOver(winner);
-        return;
-      }
+      if (data.gameOver && winner) return handleGameOver(data.winner);
 
+      // Turno del bot
       setTimeout(() => {
-        const newPlayerBoard = [...playerBoard];
-        const { rowBot, colBot, hitBot, gameOverBot } = data;
-        newPlayerBoard[rowBot][colBot] = hitBot;
-        setPlayerBoard(newPlayerBoard);
+        setPlayerBoard((prev) => {
+          const updated = prev.map((row, r) =>
+            row.map((cell, c) =>
+              r === data.rowBot && c === data.colBot ? data.hitBot : cell
+            )
+          );
+          return updated;
+        });
 
         if (data.shipSunkBot) {
           setSunkShips((prev) => ({
@@ -113,80 +97,93 @@ function BotsGame() {
         }
 
         setLastShot({
-          row: rowBot,
-          col: colBot,
-          hit: hitBot,
+          row: data.rowBot,
+          col: data.colBot,
+          hit: data.hitBot,
           player: "opponent",
           message: data.shipSunkBot
             ? "¡El oponente hundió tu barco!"
             : undefined,
         });
 
-        if (gameOverBot) {
-          handleGameOver(data.winner);
-          return;
-        }
+        if (data.gameOver) return handleGameOver(data.winner);
 
         setIsPlayerTurn(true);
         setGameStatus("Tu turno");
       }, 100);
-    };
+    },
+    [playerId]
+  );
 
-    const handleGameOver = (winnerId) => {
-      setGameOver(true);
-      setWinner(winnerId === playerId);
-      setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
-      sessionStorage.removeItem("playerBoard");
-    };
+  useEffect(() => {
+    if (!isReady || !gameId || !playerId || stompInitialized.current) return;
+
+    stompInitialized.current = true;
+    console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
+
+    socket.current = new SockJS("http://localhost:8080/ws");
+    const client = new Client({
+      webSocketFactory: () => socket.current,
+      reconnectDelay: 5000,
+    });
 
     client.onConnect = () => {
-      console.log("Conectado al servidor WebSocket");
-      setGameStatus("Conectado. Tu turno");
-      setIsPlayerTurn(true);
+      console.log("🟢 WebSocket conectado");
 
       client.subscribe(`/topic/game/${gameId}`, (message) => {
         const data = JSON.parse(message.body);
         handleShotResult(data);
       });
+
+      // ⚠️ Hacer el fetch *después* de establecer conexión WebSocket
+      fetch(`http://localhost:8080/api/game/resume/${gameId}/${playerId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setPlayerBoard(mapBoardToNames(data.playerBoard));
+          setOpponentBoard(data.botBoard);
+          setSunkShips(data.sunkShips);
+          setGameOver(data.gameOver);
+          setWinner(data.winner === playerId);
+          setLastShot(data.lastShot || null);
+          setIsPlayerTurn(data.turn === playerId && !data.gameOver);
+          setGameStatus(
+            data.gameOver
+              ? "Juego terminado"
+              : data.turn === playerId
+              ? "Tu turno"
+              : "Turno del bot"
+          );
+          console.log("🟢 Juego reanudado:", data);
+        })
+        .catch((err) => {
+          console.error("🔴 Error al reanudar:", err);
+          setGameStatus("Error al cargar el juego");
+        });
     };
 
-    client.onStompError = (error) => {
-      console.error("Error en la conexión:", error);
-      setGameStatus("Error de conexión con el servidor");
+    client.onStompError = (err) => {
+      console.error("🔴 STOMP error:", err);
     };
 
     client.activate();
     stompClient.current = client;
 
     return () => {
-      if (stompClient.current && stompClient.current.connected) {
-        stompClient.current.deactivate();
-        stompClient.current = null;
-      }
+      stompClient.current?.deactivate();
+      stompClient.current = null;
+      stompInitialized.current = false;
     };
-  }, [
-    isReady,
-    gameId,
-    playerId,
-    initialPlayerBoard,
-    playerBoard,
-    opponentBoard,
-  ]);
+  }, [isReady, gameId, playerId, handleShotResult]);
 
   const handleCellClick = (row, col) => {
     if (
       !isPlayerTurn ||
       gameOver ||
-      ["hit", "miss"].includes(opponentBoard[row][col])
+      ["hit", "miss"].includes(opponentBoard?.[row]?.[col])
     )
       return;
 
-    if (!stompClient.current || !stompClient.current.connected) {
-      alert("No hay conexión con el servidor");
-      return;
-    }
-
-    stompClient.current.publish({
+    stompClient.current?.publish({
       destination: `/app/game/${gameId}/shot`,
       body: JSON.stringify({ row, col, playerId, gameId }),
     });
@@ -196,14 +193,12 @@ function BotsGame() {
   };
 
   const handleExitGame = () => {
-    if (stompClient.current && stompClient.current.connected) {
-      stompClient.current.publish({
-        destination: `/app/game/${gameId}/abandon`,
-        body: JSON.stringify({ playerId, gameId }),
-      });
-      stompClient.current.deactivate();
-    }
-    sessionStorage.removeItem("playerBoard");
+    stompClient.current?.publish({
+      destination: `/app/game/${gameId}/abandon`,
+      body: JSON.stringify({ playerId, gameId }),
+    });
+    stompClient.current?.deactivate();
+    sessionStorage.removeItem("playerBoard"); // remove?
     navigate("/");
   };
 
@@ -252,10 +247,10 @@ function BotsGame() {
     );
   };
 
-  if (!isReady || !playerBoard) {
+  if (!isReady || !playerBoard || !opponentBoard) {
     return (
       <div className="game-container">
-        <h2>{!isReady ? "Cargando jugador..." : "Cargando juego..."}</h2>
+        <h2>Cargando juego...</h2>
       </div>
     );
   }

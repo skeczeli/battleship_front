@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Setup from "components/Setup";
-import { getPlayerId } from "services/PlayerService";
+import { getPlayerId } from "services/PlayerService"; // maybe swap this for useUser like Game
 import { useUser } from "contexts/UserContext";
 import "styles/main.css";
 import "App.css";
@@ -52,7 +52,7 @@ function BotsSetup() {
       const data = await response.json();
       const { gameId } = data;
 
-      sessionStorage.setItem("playerBoard", JSON.stringify(numericBoard));
+      sessionStorage.setItem("playerBoard", JSON.stringify(numericBoard)); // remove, no?
 
       // Navegar a la pantalla de juego con los datos necesarios
       navigate(`/play-mode/bots/game/${gameId}`, {
