@@ -194,7 +194,7 @@ function BotsGame() {
 
   const handleExitGame = () => {
     stompClient.current?.publish({
-      destination: `/app/game/${gameId}/abandon`,
+      destination: `/app/game/bot/${gameId}/abandon`,
       body: JSON.stringify({ playerId, gameId }),
     });
     stompClient.current?.deactivate();

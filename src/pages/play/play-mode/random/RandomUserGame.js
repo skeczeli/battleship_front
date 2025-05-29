@@ -3,17 +3,14 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
-import { getPlayerId } from "services/PlayerService";
 import { useUser } from "contexts/UserContext";
 import "styles/game.css";
 
-function BotsGame() {
+function RandomUserGame() {
   const location = useLocation();
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const playerId = getPlayerId(user);
-
+  const { user, playerId, isReady } = useUser();
 
   // Obtener el tablero inicial del estado de navegación
   const initialPlayerBoard =
@@ -34,12 +31,8 @@ function BotsGame() {
   const [lastShot, setLastShot] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
 
-  // Estado para rastrear los barcos hundidos
-  const [sunkShips, setSunkShips] = useState({
-    player: [], // IDs de los barcos del jugador que han sido hundidos
-    opponent: [], // IDs de los barcos del oponente que han sido hundidos
-  });
 
   // Referencia al cliente STOMP
   const stompClient = useRef(null);
@@ -47,29 +40,29 @@ function BotsGame() {
 
   // Validar que tenemos el tablero y el gameId
   useEffect(() => {
+    if (!isReady) return; //Sofia?
+
     if (!playerId) {
       alert("Identidad del jugador no disponible");
-      navigate("/play-mode/bots/setup");
+      navigate("/play-mode/random/setup/multiplayer");
     }
 
     if (!initialPlayerBoard) {
-      alert(
-        "No hay configuración de tablero. Volviendo a la pantalla de configuración."
-      );
-      navigate("/play-mode/bots/setup");
+      alert("No hay configuración de tablero.");
+      navigate("/play-mode/random/setup/multiplayer");
       return;
     }
 
     if (!gameId) {
       alert("ID de juego no disponible");
-      navigate("/play-mode/bots/setup");
+      navigate("/play-mode/random/setup/multiplayer");
       return;
     }
-  }, [playerId, initialPlayerBoard, gameId, navigate]);
+  }, [isReady, playerId, initialPlayerBoard, gameId, navigate]);
 
   // Inicializar la conexión WebSocket
   useEffect(() => {
-    if (!initialPlayerBoard || !gameId) return;
+    if (!isReady || !initialPlayerBoard || !gameId) return;
     if (connectedRef.current) return;
     connectedRef.current = true;
 
@@ -102,8 +95,8 @@ function BotsGame() {
       if (data.playerId === playerId) {
         // Actualizar tablero del oponente con nuestro disparo
         const newOpponentBoard = [...opponentBoard];
-        const { row, col, hit } = data;
-        newOpponentBoard[row][col] = hit ? "hit" : "miss";
+        const { row, col, hit, gameOver, winner } = data;  // mmm tengo que ver si gameOver y winner se pasan asi. creeria que si
+        newOpponentBoard[row][col] = hit;
         setOpponentBoard(newOpponentBoard);
 
         // Verificar si se hundió un barco
@@ -122,11 +115,18 @@ function BotsGame() {
           player: "player",
           message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
         });
+
+        
+        if (gameOver) {
+          handleGameOver(winner);
+          return;
+        }
+
       } else {
         // Actualizar nuestro tablero con el disparo del oponente
         const newPlayerBoard = [...playerBoard];
-        const { row, col, hit } = data;
-        newPlayerBoard[row][col] = hit ? "hit" : "miss";
+        const { row, col, hit, gameOver, winner } = data;
+        newPlayerBoard[row][col] = hit;
         setPlayerBoard(newPlayerBoard);
 
         // Verificar si se hundió un barco del jugador
@@ -147,6 +147,11 @@ function BotsGame() {
         });
       }
 
+        if (gameOver) {
+          handleGameOver(winner);
+          return;
+        }
+
       // Actualizar turno
       setIsPlayerTurn(data.nextTurn === playerId);
       setGameStatus(
@@ -155,10 +160,10 @@ function BotsGame() {
     };
 
     // Función para manejar el fin del juego
-    const handleGameOver = (data) => {
+    const handleGameOver = (winnerId) => {
       setGameOver(true);
-      setWinner(data.winner === playerId);
-      setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+      setWinner(winnerId === playerId);
+      setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
       sessionStorage.removeItem("playerBoard");
     };
 
@@ -167,21 +172,22 @@ function BotsGame() {
       console.log("Conectado al servidor WebSocket");
       setGameStatus("Conectado. Esperando inicio del juego...");
 
+      // aca tengo que decidir el turno?
+
       // Suscribirse a mensajes del juego
       client.subscribe(`/topic/game/${gameId}`, (message) => {
         const data = JSON.parse(message.body);
-        console.log("Mensaje recibido:", data);
 
         // Manejar diferentes tipos de mensajes
         switch (data.type) {
+          case "WAITING_FOR_OPPONENT":
+            setGameStatus("Esperando al oponente...");
+            break;
           case "GAME_START":
             handleGameStart(data);
             break;
           case "SHOT_RESULT":
             handleShotResult(data);
-            break;
-          case "GAME_OVER":
-            handleGameOver(data);
             break;
           default:
             console.log("Tipo de mensaje desconocido:", data.type);
@@ -191,7 +197,7 @@ function BotsGame() {
       // Notificar que el jugador está listo -> check?
       client.publish({
         destination: `/app/game/${gameId}/join`,
-        body: JSON.stringify({ playerId, gameId, board: playerBoard }),
+        body: JSON.stringify({ playerId, gameId, board: playerBoard }),   //mmmmmmmmmmm
       });
     };
 
@@ -210,10 +216,9 @@ function BotsGame() {
       if (stompClient.current && stompClient.current.connected) {
         stompClient.current.deactivate();
         stompClient.current = null;
-        connectedRef.current = false;
       }
     };
-  }, [gameId, playerId, initialPlayerBoard, playerBoard, opponentBoard, user]);
+  }, [isReady, gameId, playerId, initialPlayerBoard, playerBoard, opponentBoard, user]);
 
   // Manejar click en celda para disparar
   const handleCellClick = (row, col) => {
@@ -234,7 +239,7 @@ function BotsGame() {
 
     // Enviar disparo al servidor
     stompClient.current.publish({
-      destination: `/app/game/${gameId}/shot`,
+      destination: `/app/game/multiplayer/${gameId}/shot`,
       body: JSON.stringify({ row, col, playerId, gameId }),
     });
 
@@ -247,7 +252,7 @@ function BotsGame() {
   const handleExitGame = () => {
     if (stompClient.current && stompClient.current.connected) {
       stompClient.current.publish({
-        destination: `/app/game/${gameId}/abandon`,
+        destination: `/app/game/multiplayer/${gameId}/abandon`,
         body: JSON.stringify({ playerId, gameId }),
       });
       stompClient.current.deactivate();
@@ -263,7 +268,8 @@ function BotsGame() {
     const { row, col, hit, player, message } = lastShot;
     const playerText =
       player === "player" ? "Tu disparo" : "Disparo del oponente";
-    const resultText = hit ? "¡Impacto!" : "Agua";
+    const isHit = hit === "hit";
+    const resultText = isHit ? "¡Impacto!" : "Agua";
     const position = `[${String.fromCharCode(65 + row)}${col + 1}]`;
 
     return (
@@ -304,17 +310,17 @@ function BotsGame() {
   };
 
   // Mostrar pantalla de carga si no hay tablero
-  if (!playerBoard) {
+  if (!isReady || !playerBoard) {
     return (
       <div className="game-container">
-        <h2>Cargando juego...</h2>
+        <h2>{!isReady ? "Cargando jugador..." : "Cargando juego..."}</h2>
       </div>
     );
   }
 
   return (
     <div className="game-container">
-      <h2>Batalla Naval - Modo Bot</h2>
+      <h2>Batalla Naval - Multijugador</h2>
 
       <div className="player-info">
         <p>
@@ -358,7 +364,7 @@ function BotsGame() {
 
       {renderLastShot()}
 
-      {gameOver && (
+      {gameOver ? (
         <div className="game-over">
           <h3>
             {winner ? "¡Felicidades! Has ganado" : "Has perdido esta vez"}
@@ -367,9 +373,7 @@ function BotsGame() {
             Salir
           </button>
         </div>
-      )}
-
-      {!gameOver && (
+      ) : (
         <button onClick={handleExitGame} className="exit-button">
           Abandonar juego
         </button>
@@ -378,4 +382,4 @@ function BotsGame() {
   );
 }
 
-export default BotsGame;
+export default RandomUserGame;
