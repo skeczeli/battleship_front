@@ -1,292 +1,185 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
 import { useUser } from "contexts/UserContext";
 import "styles/game.css";
+import "styles/enhanced-board.css"; // ← Agregar este import
 
 function RandomUserGame() {
   const location = useLocation();
   const { gameId } = useParams();
+  const { user, playerId, isReady } = useUser(); // ← Agregar user
   const navigate = useNavigate();
-  const { user, playerId, isReady } = useUser();
 
-  // Obtener el tablero inicial del estado de navegación
-  const initialPlayerBoard =
-    location.state?.playerBoard ||
-    JSON.parse(sessionStorage.getItem("playerBoard") || "null");
-
-  // Estados para los tableros
-  const [playerBoard, setPlayerBoard] = useState(initialPlayerBoard || null);
+  const [playerBoard, setPlayerBoard] = useState(location.state?.playerBoard || null);
   const [opponentBoard, setOpponentBoard] = useState(
-    Array(10)
-      .fill()
-      .map(() => Array(10).fill(null))
+    Array(10).fill().map(() => Array(10).fill(null))
   );
-
-  // Estados del juego
-  const [gameStatus, setGameStatus] = useState("Conectando...");
-  const [isPlayerTurn, setIsPlayerTurn] = useState(false);
-  const [lastShot, setLastShot] = useState(null);
-  const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState(null);
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
+  const [gameStatus, setGameStatus] = useState("Cargando partida...");
+  const [isPlayerTurn, setIsPlayerTurn] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [winner, setWinner] = useState(null); // ← Agregar estado winner
 
-
-  // Referencia al cliente STOMP
   const stompClient = useRef(null);
-  const connectedRef = useRef(false);
+  const stompInitialized = useRef(false);
 
-  // Validar que tenemos el tablero y el gameId
+  const handleGameEvent = useCallback((data) => {
+    switch (data.type) {
+      case "GAME_START":
+        setGameStarted(true);
+        setGameStatus("Juego iniciado");
+        setIsPlayerTurn(data.turn === playerId);
+        break;
+      case "SHOT_RESULT":
+        const isOwn = data.playerId === playerId;
+
+        if (isOwn) {
+          setOpponentBoard((prev) =>
+            prev.map((row, r) =>
+              row.map((cell, c) =>
+                r === data.row && c === data.col ? data.hit : cell
+              )
+            )
+          );
+          if (data.shipSunk) {
+            setSunkShips((prev) => ({
+              ...prev,
+              opponent: [...prev.opponent, "unknown"],
+            }));
+          }
+        } else {
+          setPlayerBoard((prev) =>
+            prev.map((row, r) =>
+              row.map((cell, c) =>
+                r === data.row && c === data.col ? data.hit : cell
+              )
+            )
+          );
+          if (data.shipSunk) {
+            setSunkShips((prev) => ({
+              ...prev,
+              player: [...prev.player, "unknown"],
+            }));
+          }
+        }
+
+        if (data.gameOver) {
+          setGameOver(true);
+          setWinner(data.winner === playerId); // ← Agregar esto
+          setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
+        } else {
+          setIsPlayerTurn(data.nextTurn === playerId);
+          setGameStatus(data.nextTurn === playerId ? "Tu turno" : "Turno del oponente");
+        }
+        break;
+      case "GAME_ABANDONED":
+        setGameStatus("El oponente abandonó la partida");
+        setGameOver(true);
+        setWinner(true); // ← Ganar por abandono
+        break;
+      case "ERROR":
+        setGameStatus("Error: " + data.error);
+        break;
+      default:
+        break;
+    }
+  }, [playerId]);
+
   useEffect(() => {
-    if (!isReady) return; //Sofia?
+    if (!isReady || !gameId || !playerId || stompInitialized.current) return;
+    stompInitialized.current = true;
 
-    if (!playerId) {
-      alert("Identidad del jugador no disponible");
-      navigate("/play-mode/random/setup/multiplayer");
-    }
-
-    if (!initialPlayerBoard) {
-      alert("No hay configuración de tablero.");
-      navigate("/play-mode/random/setup/multiplayer");
-      return;
-    }
-
-    if (!gameId) {
-      alert("ID de juego no disponible");
-      navigate("/play-mode/random/setup/multiplayer");
-      return;
-    }
-  }, [isReady, playerId, initialPlayerBoard, gameId, navigate]);
-
-  // Inicializar la conexión WebSocket
-  useEffect(() => {
-    if (!isReady || !initialPlayerBoard || !gameId) return;
-    if (connectedRef.current) return;
-    connectedRef.current = true;
-
-    console.log(
-      `Conectando al juego ${gameId} como jugador ${
-        user?.username || "Invitado"
-      }`
-    );
-
-    // Crear conexión SockJS
     const socket = new SockJS("http://localhost:8080/ws");
-
-    // Crear cliente STOMP sobre SockJS
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
     });
 
-    // Definir las funciones manejadoras dentro del useEffect
-    // Función para manejar el inicio del juego
-    const handleGameStart = (data) => {
-      setIsPlayerTurn(data.turn === playerId);
-      setGameStatus(data.turn === playerId ? "Tu turno" : "Turno del oponente");
-    };
-
-    // Función para manejar el resultado de un disparo
-    const handleShotResult = (data) => {
-      if (data.playerId === playerId) {
-        // Actualizar tablero del oponente con nuestro disparo
-        const newOpponentBoard = [...opponentBoard];
-        const { row, col, hit, gameOver, winner } = data;  // mmm tengo que ver si gameOver y winner se pasan asi. creeria que si
-        newOpponentBoard[row][col] = hit;
-        setOpponentBoard(newOpponentBoard);
-
-        // Verificar si se hundió un barco
-        if (data.shipSunk) {
-          // Agregar el barco a la lista de barcos hundidos del oponente
-          setSunkShips((prev) => ({
-            ...prev,
-            opponent: [...prev.opponent, data.shipId],
-          }));
-        }
-
-        setLastShot({
-          row,
-          col,
-          hit,
-          player: "player",
-          message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
-        });
-
-        
-        if (gameOver) {
-          handleGameOver(winner);
-          return;
-        }
-
-      } else {
-        // Actualizar nuestro tablero con el disparo del oponente
-        const newPlayerBoard = [...playerBoard];
-        const { row, col, hit, gameOver, winner } = data;
-        newPlayerBoard[row][col] = hit;
-        setPlayerBoard(newPlayerBoard);
-
-        // Verificar si se hundió un barco del jugador
-        if (data.shipSunk) {
-          // Agregar el barco a la lista de barcos hundidos del jugador
-          setSunkShips((prev) => ({
-            ...prev,
-            player: [...prev.player, data.shipId],
-          }));
-        }
-
-        setLastShot({
-          row,
-          col,
-          hit,
-          player: "opponent",
-          message: data.shipSunk ? "¡El oponente hundió tu barco!" : undefined,
-        });
-      }
-
-        if (gameOver) {
-          handleGameOver(winner);
-          return;
-        }
-
-      // Actualizar turno
-      setIsPlayerTurn(data.nextTurn === playerId);
-      setGameStatus(
-        data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
-      );
-    };
-
-    // Función para manejar el fin del juego
-    const handleGameOver = (winnerId) => {
-      setGameOver(true);
-      setWinner(winnerId === playerId);
-      setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
-      sessionStorage.removeItem("playerBoard");
-    };
-
-    // Al establecer conexión
     client.onConnect = () => {
-      console.log("Conectado al servidor WebSocket");
-      setGameStatus("Conectado. Esperando inicio del juego...");
-
-      // aca tengo que decidir el turno?
-
-      // Suscribirse a mensajes del juego
-      client.subscribe(`/topic/game/${gameId}`, (message) => {
-        const data = JSON.parse(message.body);
-
-        // Manejar diferentes tipos de mensajes
-        switch (data.type) {
-          case "WAITING_FOR_OPPONENT":
-            setGameStatus("Esperando al oponente...");
-            break;
-          case "GAME_START":
-            handleGameStart(data);
-            break;
-          case "SHOT_RESULT":
-            handleShotResult(data);
-            break;
-          default:
-            console.log("Tipo de mensaje desconocido:", data.type);
-        }
+      client.subscribe(`/topic/game/${gameId}`, (msg) => {
+        const data = JSON.parse(msg.body);
+        handleGameEvent(data);
       });
 
-      // Notificar que el jugador está listo -> check?
-      client.publish({
-        destination: `/app/game/${gameId}/join`,
-        body: JSON.stringify({ playerId, gameId, board: playerBoard }),   //mmmmmmmmmmm
-      });
+      // Solo jugador 1 reanuda
+      if (location.state?.isFirstPlayer) {
+        fetch(`http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error("No se encontró la partida");
+            }
+            return res.json();
+          })
+          .then((data) => {
+            if (data.status === "WAITING_FOR_OPPONENT") {
+              setGameStatus("Esperando a que el oponente se una...");
+              return;
+            }
+
+            setPlayerBoard(data.playerBoard);
+            setSunkShips(data.sunkShips);
+            setGameOver(data.gameOver);
+            setIsPlayerTurn(data.turn === playerId);
+            if (data.gameOver || data.turn) setGameStarted(true);
+            setGameStatus(data.turn === playerId ? "Tu turno" : "Turno del oponente");
+          })
+          .catch((err) => {
+            console.error("Error:", err);
+            setGameStatus("Error al reanudar la partida. Empezá una nueva.");
+            sessionStorage.removeItem("sessionId");
+          });
+      }
     };
 
-    // Manejar errores de conexión
-    client.onStompError = (error) => {
-      console.error("Error en la conexión:", error);
-      setGameStatus("Error de conexión con el servidor");
-    };
-
-    // Iniciar conexión
     client.activate();
     stompClient.current = client;
 
-    // Limpiar al desmontar
     return () => {
-      if (stompClient.current && stompClient.current.connected) {
-        stompClient.current.deactivate();
-        stompClient.current = null;
-      }
+      stompClient.current?.deactivate();
+      stompClient.current = null;
+      stompInitialized.current = false;
     };
-  }, [isReady, gameId, playerId, initialPlayerBoard, playerBoard, opponentBoard, user]);
+  }, [isReady, gameId, playerId, handleGameEvent, location.state]);
 
-  // Manejar click en celda para disparar
+  // Join del jugador 2 después de Setup
+  useEffect(() => {
+    if (!isReady || !gameId || !playerId || !stompClient.current) return;
+
+    const { isFirstPlayer, playerBoard } = location.state || {};
+
+    if (!isFirstPlayer && playerBoard) {
+      stompClient.current.publish({
+        destination: `/app/game/multiplayer/${gameId}/join`,
+        body: JSON.stringify({ playerId, board: playerBoard }),
+      });
+    }
+  }, [isReady, gameId, playerId, location.state]);
+
   const handleCellClick = (row, col) => {
-    // Solo permitir disparar si es el turno del jugador y no hay disparo previo en esa celda
-    if (
-      !isPlayerTurn ||
-      gameOver ||
-      ["hit", "miss"].includes(opponentBoard[row][col])
-    ) {
-      return;
-    }
-
-    // Verificar conexión
-    if (!stompClient.current || !stompClient.current.connected) {
-      alert("No hay conexión con el servidor");
-      return;
-    }
-
-    // Enviar disparo al servidor
-    stompClient.current.publish({
+    if (!isPlayerTurn || gameOver || opponentBoard?.[row]?.[col] !== null) return;
+    stompClient.current?.publish({
       destination: `/app/game/multiplayer/${gameId}/shot`,
-      body: JSON.stringify({ row, col, playerId, gameId }),
+      body: JSON.stringify({ row, col, playerId }),
     });
-
-    // Deshabilitar temporalmente el turno hasta recibir respuesta
     setIsPlayerTurn(false);
     setGameStatus("Esperando respuesta...");
   };
 
-  // Manejar abandono de juego
   const handleExitGame = () => {
-    if (stompClient.current && stompClient.current.connected) {
-      stompClient.current.publish({
-        destination: `/app/game/multiplayer/${gameId}/abandon`,
-        body: JSON.stringify({ playerId, gameId }),
-      });
-      stompClient.current.deactivate();
-    }
-    sessionStorage.removeItem("playerBoard");
+    stompClient.current?.publish({
+      destination: `/app/game/multiplayer/${gameId}/abandon`,
+      body: JSON.stringify({ playerId }),
+    });
     navigate("/");
   };
 
-  // Renderizar el último disparo
-  const renderLastShot = () => {
-    if (!lastShot) return null;
-
-    const { row, col, hit, player, message } = lastShot;
-    const playerText =
-      player === "player" ? "Tu disparo" : "Disparo del oponente";
-    const isHit = hit === "hit";
-    const resultText = isHit ? "¡Impacto!" : "Agua";
-    const position = `[${String.fromCharCode(65 + row)}${col + 1}]`;
-
-    return (
-      <div className="last-shot">
-        <p>
-          {playerText} en {position}:{" "}
-          <span className={hit ? "hit" : "miss"}>{resultText}</span>
-        </p>
-        {message && <p className="shot-message">{message}</p>}
-      </div>
-    );
-  };
-
-  // Renderizar contador de barcos hundidos
+  // ← Agregar función para contador de barcos
   const renderShipCounter = () => {
-    const totalShips = 5; // Ajusta este número según la cantidad de barcos en tu juego
-
+    const totalShips = 5;
     return (
       <div className="ship-counter">
         <div className="player-counter">
@@ -309,19 +202,19 @@ function RandomUserGame() {
     );
   };
 
-  // Mostrar pantalla de carga si no hay tablero
-  if (!isReady || !playerBoard) {
+  if (!playerBoard || !opponentBoard || !gameStarted) {
     return (
       <div className="game-container">
-        <h2>{!isReady ? "Cargando jugador..." : "Cargando juego..."}</h2>
+        <h2>{gameStatus}</h2>
       </div>
     );
   }
 
   return (
-    <div className="game-container">
-      <h2>Batalla Naval - Multijugador</h2>
+    <div className="game-container bots-setup-container"> {/* ← Agregar clase bots-setup-container */}
+      <h2>Modo Multijugador Aleatorio</h2>
 
+      {/* ← Agregar info del jugador */}
       <div className="player-info">
         <p>
           Jugando como:{" "}
@@ -331,39 +224,45 @@ function RandomUserGame() {
         </p>
       </div>
 
+      {/* ← Mejorar estado del juego */}
       <div className="game-status">
         <p className={gameOver ? (winner ? "win-status" : "lose-status") : ""}>
           {gameStatus}
         </p>
       </div>
 
+      {/* ← Agregar contador de barcos */}
       {renderShipCounter()}
 
       <div className="boards-container">
         <div className="board-section">
           <h3>Tu tablero</h3>
-          <GameBoard
-            board={playerBoard}
-            isPlayerBoard={true}
-            onCellClick={() => {}} // No hacemos nada al hacer clic en nuestro tablero
-            sunkShips={sunkShips.player}
-          />
+          <div className="board-wrapper"> {/* ← Agregar wrapper */}
+            <GameBoard 
+              board={playerBoard} 
+              isPlayerBoard={true} 
+              onCellClick={() => {}} 
+              sunkShips={sunkShips.player}
+              isGameMode={true}
+            />
+          </div>
         </div>
-
         <div className="board-section">
           <h3>Tablero del oponente</h3>
-          <GameBoard
-            board={opponentBoard}
-            isPlayerBoard={false}
-            onCellClick={handleCellClick}
-            isPlayerTurn={isPlayerTurn && !gameOver}
-            sunkShips={sunkShips.opponent}
-          />
+          <div className="board-wrapper"> {/* ← Agregar wrapper */}
+            <GameBoard 
+              board={opponentBoard} 
+              isPlayerBoard={false} 
+              onCellClick={handleCellClick} 
+              isPlayerTurn={isPlayerTurn} 
+              sunkShips={sunkShips.opponent}
+              isGameMode={true}
+            />
+          </div>
         </div>
       </div>
 
-      {renderLastShot()}
-
+      {/* ← Mejorar botón de salida */}
       {gameOver ? (
         <div className="game-over">
           <h3>
