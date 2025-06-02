@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Setup from "components/Setup";
-import { getPlayerId } from "services/PlayerService"; // maybe swap this for useUser like Game
 import { useUser } from "contexts/UserContext";
 import "styles/main.css";
 import "App.css";
@@ -9,7 +8,7 @@ import "App.css";
 function BotsSetup() {
   const navigate = useNavigate();
   const totalShips = 5;
-  const { user } = useUser();
+  const { user, playerId } = useUser();
 
   const shipMap = {
     portaaviones: 1,
@@ -26,8 +25,6 @@ function BotsSetup() {
   };
 
   const handleConfirm = async (board, placedShips) => {
-    const playerId = getPlayerId(user);
-
     if (placedShips.length < totalShips) {
       alert("Coloca todos los barcos antes de empezar el juego.");
       return;

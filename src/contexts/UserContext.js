@@ -52,8 +52,11 @@ export function UserProvider({ children }) {
     localStorage.removeItem("user");
     localStorage.removeItem(PLAYER_ID_KEY);
     sessionStorage.removeItem(PLAYER_ID_KEY);
+
+    const newGuestId = generateGuestId();
+    sessionStorage.setItem(PLAYER_ID_KEY, newGuestId);
     setUser(null);
-    setPlayerId(generateGuestId()); // reinicia como guest
+    setPlayerId(newGuestId);
   };
 
   return (
