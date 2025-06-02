@@ -5,6 +5,7 @@ import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
 import { useUser } from "contexts/UserContext";
 import "styles/game.css";
+import "styles/enhanced-board.css";
 
 function BotsGame() {
   const { gameId } = useParams();
@@ -46,7 +47,7 @@ function BotsGame() {
     setGameOver(true);
     setWinner(winnerId === playerId);
     setGameStatus(winnerId === playerId ? "¡Ganaste!" : "¡Perdiste!");
-    sessionStorage.removeItem("playerBoard"); // remove?
+    sessionStorage.removeItem("playerBoard");
   };
 
   const handleShotResult = useCallback(
@@ -112,7 +113,7 @@ function BotsGame() {
         setGameStatus("Tu turno");
       }, 100);
     },
-    [playerId]
+    [playerId, winner]
   );
 
   useEffect(() => {
@@ -135,7 +136,7 @@ function BotsGame() {
         handleShotResult(data);
       });
 
-      // ⚠️ Hacer el fetch *después* de establecer conexión WebSocket
+      // Hacer el fetch después de establecer conexión WebSocket
       fetch(`http://localhost:8080/api/game/resume/${gameId}/${playerId}`)
         .then((res) => res.json())
         .then((data) => {
@@ -184,7 +185,7 @@ function BotsGame() {
       return;
 
     stompClient.current?.publish({
-      destination: `/app/game/${gameId}/shot`,
+      destination: `/app/game/bot/${gameId}/shot`,
       body: JSON.stringify({ row, col, playerId, gameId }),
     });
 
@@ -194,11 +195,11 @@ function BotsGame() {
 
   const handleExitGame = () => {
     stompClient.current?.publish({
-      destination: `/app/game/${gameId}/abandon`,
+      destination: `/app/game/bot/${gameId}/abandon`,
       body: JSON.stringify({ playerId, gameId }),
     });
     stompClient.current?.deactivate();
-    sessionStorage.removeItem("playerBoard"); // remove?
+    sessionStorage.removeItem("playerBoard");
     navigate("/");
   };
 
@@ -256,7 +257,7 @@ function BotsGame() {
   }
 
   return (
-    <div className="game-container">
+    <div className="game-container bots-setup-container">
       <h2>Batalla Naval - Modo Bot</h2>
 
       <div className="player-info">
@@ -279,23 +280,29 @@ function BotsGame() {
       <div className="boards-container">
         <div className="board-section">
           <h3>Tu tablero</h3>
-          <GameBoard
-            board={playerBoard}
-            isPlayerBoard={true}
-            onCellClick={() => {}}
-            sunkShips={sunkShips.player}
-          />
+          <div className="board-wrapper">
+            <GameBoard
+              board={playerBoard}
+              isPlayerBoard={true}
+              onCellClick={() => {}}
+              sunkShips={sunkShips.player}
+              isGameMode={true}
+            />
+          </div>
         </div>
 
         <div className="board-section">
           <h3>Tablero del oponente</h3>
-          <GameBoard
-            board={opponentBoard}
-            isPlayerBoard={false}
-            onCellClick={handleCellClick}
-            isPlayerTurn={isPlayerTurn && !gameOver}
-            sunkShips={sunkShips.opponent}
-          />
+          <div className="board-wrapper">
+            <GameBoard
+              board={opponentBoard}
+              isPlayerBoard={false}
+              onCellClick={handleCellClick}
+              isPlayerTurn={isPlayerTurn && !gameOver}
+              sunkShips={sunkShips.opponent}
+              isGameMode={true}
+            />
+          </div>
         </div>
       </div>
 

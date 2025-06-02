@@ -37,7 +37,7 @@ function App() {
           <Route path="/play-mode/bots/setup" element={<BotsSetup />} />
           <Route path="/play-mode/bots/game/:gameId" element={<BotsGame />} />
           <Route path="/play-mode/random/setup" element={<RandomUserSetup />} />
-          <Route path="/play-mode/random/game" element={<RandomUserGame />} />
+          <Route path="/play-mode/random/game/:gameId" element={<RandomUserGame />} />
           <Route
             path="/play-mode/private/setup"
             element={<PrivateRoomSetup />}

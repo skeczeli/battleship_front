@@ -1,5 +1,5 @@
 // Setup.js
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "styles/setup.css";
 import Board from "./Board";
 import ShipList from "./ShipList";
@@ -17,7 +17,14 @@ const ships = [
 /**
  * Componente principal del setup de Battleship.
  */
-function Setup({ onConfirm }) {
+function Setup({ 
+  onConfirm, 
+  buttonText = "Confirmar", 
+  showJoinOption = false 
+}) {
+  // Estado para el input del gameId (solo para multiplayer)
+  const [gameIdInput, setGameIdInput] = useState("");
+
   // Cargar datos guardados en localStorage
   const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
 
@@ -41,7 +48,13 @@ function Setup({ onConfirm }) {
 
   // Función para manejar la confirmación del setup
   const handleConfirm = () => {
-    onConfirm(board, placedShips);
+    if (showJoinOption) {
+      // Para multiplayer, pasar también el gameIdInput
+      onConfirm(board, placedShips, gameIdInput);
+    } else {
+      // Para bot, solo pasar board y placedShips
+      onConfirm(board, placedShips);
+    }
   };
 
   // Guardar automáticamente en localStorage cuando cambian el tablero o los barcos
@@ -70,16 +83,38 @@ function Setup({ onConfirm }) {
             {orientation === "horizontal" ? "Horizontal" : "Vertical"}
           </button>
           <button onClick={resetBoard}>Reiniciar</button>
+          
+          {/* Input para unirse a partida (solo en multiplayer) */}
+          {showJoinOption && (
+            <div className="join-game-input">
+              <label htmlFor="gameId">ID de la partida:</label>
+              <input
+                type="text"
+                id="gameId"
+                value={gameIdInput}
+                onChange={(e) => setGameIdInput(e.target.value)}
+                placeholder="Ingresa el ID de la partida"
+                className="game-id-input"
+              />
+            </div>
+          )}
+          
           <button
             onClick={handleConfirm}
-            disabled={placedShips.length < ships.length}
+            disabled={
+              placedShips.length < ships.length || 
+              (showJoinOption && gameIdInput.trim() === "")
+            }
             title={
               placedShips.length < ships.length
                 ? "Coloca todos los barcos para continuar"
+                : showJoinOption && gameIdInput.trim() === ""
+                ? "Ingresa un ID de partida válido"
                 : ""
             }
+            className="confirm-button"
           >
-            Confirmar
+            {buttonText}
           </button>
         </div>
       </div>
