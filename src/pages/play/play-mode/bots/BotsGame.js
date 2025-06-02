@@ -16,6 +16,7 @@ function BotsGame() {
   const [opponentBoard, setOpponentBoard] = useState(null);
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
   const [lastShot, setLastShot] = useState(null);
+  const [shotHistory, setShotHistory] = useState([]);
   const [gameStatus, setGameStatus] = useState("Cargando...");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -77,6 +78,17 @@ function BotsGame() {
         message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
       });
 
+      setShotHistory((prev) => [
+        ...prev,
+        {
+          row: data.row,
+          col: data.col,
+          hit: data.hit,
+          player: "player",
+          message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
+        },
+      ]);
+
       if (data.gameOver && data.winner === playerId) {
         handleGameOver(data.winner);
         return;
@@ -110,6 +122,19 @@ function BotsGame() {
               ? "¡El oponente hundió tu barco!"
               : undefined,
           });
+
+          setShotHistory((prev) => [
+            ...prev,
+            {
+              row: data.rowBot,
+              col: data.colBot,
+              hit: data.hitBot,
+              player: "opponent",
+              message: data.shipSunkBot
+                ? "¡El oponente hundió tu barco!"
+                : undefined,
+            },
+          ]);
 
           if (data.gameOver) return handleGameOver(data.winner);
 
@@ -151,6 +176,7 @@ function BotsGame() {
           setGameOver(data.gameOver);
           setWinner(data.winner === playerId);
           setLastShot(data.lastShot || null);
+          setShotHistory(data.shotHistory || []);
           setIsPlayerTurn(data.turn === playerId && !data.gameOver);
           setGameStatus(
             data.gameOver
@@ -227,6 +253,37 @@ function BotsGame() {
           <span className={isHit ? "hit" : "miss"}>{resultText}</span>
         </p>
         {message && <p className="shot-message">{message}</p>}
+      </div>
+    );
+  };
+
+  const renderShotHistory = () => {
+    if (!shotHistory || shotHistory.length === 0) return null;
+
+    return (
+      <div className="shot-history">
+        <h3>Historial de disparos</h3>
+        <div className="history-list">
+          {shotHistory.map((shot, index) => {
+            const isHit = shot.hit === "hit";
+            const playerText = shot.player === "player" ? "Tú" : "Bot";
+            const position = `[${String.fromCharCode(65 + shot.col)}${
+              shot.row + 1
+            }]`;
+
+            return (
+              <div key={index} className="history-item">
+                {playerText} → {position}:
+                <span className={isHit ? "hit" : "miss"}>
+                  {isHit ? "Impacto" : "Agua"}
+                </span>
+                {shot.message && (
+                  <span className="shot-message"> - {shot.message}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -311,6 +368,8 @@ function BotsGame() {
             />
           </div>
         </div>
+
+        <div className="board-section">{renderShotHistory()}</div>
       </div>
 
       {renderLastShot()}
