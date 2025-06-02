@@ -77,43 +77,48 @@ function BotsGame() {
         message: data.shipSunk ? "¡Hundiste un barco!" : undefined,
       });
 
-      if (data.gameOver && winner) return handleGameOver(data.winner);
+      if (data.gameOver && data.winner === playerId) {
+        handleGameOver(data.winner);
+        return;
+      }
 
       // Turno del bot
-      setTimeout(() => {
-        setPlayerBoard((prev) => {
-          const updated = prev.map((row, r) =>
-            row.map((cell, c) =>
-              r === data.rowBot && c === data.colBot ? data.hitBot : cell
-            )
-          );
-          return updated;
-        });
+      if (data.rowBot !== undefined && data.colBot !== undefined) {
+        setTimeout(() => {
+          setPlayerBoard((prev) => {
+            const updated = prev.map((row, r) =>
+              row.map((cell, c) =>
+                r === data.rowBot && c === data.colBot ? data.hitBot : cell
+              )
+            );
+            return updated;
+          });
 
-        if (data.shipSunkBot) {
-          setSunkShips((prev) => ({
-            ...prev,
-            player: [...prev.player, data.shipIdBot],
-          }));
-        }
+          if (data.shipSunkBot) {
+            setSunkShips((prev) => ({
+              ...prev,
+              player: [...prev.player, data.shipIdBot],
+            }));
+          }
 
-        setLastShot({
-          row: data.rowBot,
-          col: data.colBot,
-          hit: data.hitBot,
-          player: "opponent",
-          message: data.shipSunkBot
-            ? "¡El oponente hundió tu barco!"
-            : undefined,
-        });
+          setLastShot({
+            row: data.rowBot,
+            col: data.colBot,
+            hit: data.hitBot,
+            player: "opponent",
+            message: data.shipSunkBot
+              ? "¡El oponente hundió tu barco!"
+              : undefined,
+          });
 
-        if (data.gameOver) return handleGameOver(data.winner);
+          if (data.gameOver) return handleGameOver(data.winner);
 
-        setIsPlayerTurn(true);
-        setGameStatus("Tu turno");
-      }, 100);
+          setIsPlayerTurn(true);
+          setGameStatus("Tu turno");
+        }, 100);
+      }
     },
-    [playerId, winner]
+    [playerId]
   );
 
   useEffect(() => {
@@ -149,7 +154,9 @@ function BotsGame() {
           setIsPlayerTurn(data.turn === playerId && !data.gameOver);
           setGameStatus(
             data.gameOver
-              ? "Juego terminado"
+              ? data.winner === playerId
+                ? "¡Ganaste!"
+                : "¡Perdiste!"
               : data.turn === playerId
               ? "Tu turno"
               : "Turno del bot"
