@@ -28,6 +28,9 @@ function RandomUserGame() {
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState(null);
 
+  const { playerBoard: initialBoard } = location.state || {};
+  const [initialBoardState, setInitialBoardState] = useState(initialBoard);
+
   const stompClient = useRef(null);
   const stompInitialized = useRef(false);
 
@@ -54,8 +57,9 @@ function RandomUserGame() {
       switch (data.type) {
         case "GAME_START":
           setGameStarted(true);
-          setGameStatus("Juego iniciado");
-          setIsPlayerTurn(data.turn === playerId);
+          const isMyTurn = data.turn === playerId;
+          setIsPlayerTurn(isMyTurn);
+          setGameStatus(isMyTurn ? "Tu turno" : "Turno del oponente");
           break;
         case "SHOT_RESULT":
           const isOwn = data.playerId === playerId;
@@ -107,9 +111,12 @@ function RandomUserGame() {
           setGameStatus("El oponente abandonó la partida");
           setGameOver(true);
           setWinner(true);
+          sessionStorage.removeItem("isFirstPlayer");
+          sessionStorage.removeItem("joinedAlready");
+
           break;
         case "ERROR":
-          setGameStatus("Error: " + data.error);
+          setGameStatus("Error: " + data.message);
           break;
         default:
           break;
@@ -129,19 +136,19 @@ function RandomUserGame() {
     });
 
     client.onConnect = () => {
-      console.log("Conectado al servidor de WebSocket");
+      console.log("✅ Conectado al WebSocket");
+
+      // Suscribirse al topic del juego
       client.subscribe(`/topic/game/${gameId}`, (msg) => {
         const data = JSON.parse(msg.body);
-        console.log("Evento del juego recibido:", data);
+        console.log("📩 Evento recibido:", data);
         handleGameEvent(data);
       });
 
-      const { isFirstPlayer, playerBoard } = location.state || {};
-
-      console.log(isFirstPlayer, playerBoard);
-
-      if (isFirstPlayer) {
-        console.log("Jugador 1 uniéndose a la partida:", gameId);
+      const resume = () => {
+        console.log("🟢 Ejecutando resume()");
+        console.log("Usando gameId:", gameId);
+        console.log("Usando playerId:", playerId);
         fetch(
           `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
         )
@@ -155,31 +162,59 @@ function RandomUserGame() {
               return;
             }
 
-            console.log("Partida reanudada:", data);
-
-            setPlayerBoard(data.playerBoard);
+            console.log("🔄 Estado reanudado:", data);
+            setPlayerBoard(mapBoardToNames(data.playerBoard));
+            setOpponentBoard(data.opponentBoard);
             setSunkShips(data.sunkShips);
             setGameOver(data.gameOver);
-            setIsPlayerTurn(data.turn === playerId);
-            if (data.gameOver || data.turn) setGameStarted(true);
+            setWinner(data.winner === playerId);
+            setIsPlayerTurn(data.turn === playerId && !data.gameOver);
             setGameStatus(
-              data.turn === playerId ? "Tu turno" : "Turno del oponente"
+              data.gameOver
+                ? data.winner === playerId
+                  ? "¡Ganaste!"
+                  : "¡Perdiste!"
+                : data.turn === playerId
+                ? "Tu turno"
+                : "Turno del oponente"
             );
+            setGameStarted(true);
           })
           .catch((err) => {
-            console.error("Error:", err);
+            console.error("❌ Error al reanudar la partida:", err);
             setGameStatus("Error al reanudar la partida. Empezá una nueva.");
-            sessionStorage.removeItem("sessionId");
+            sessionStorage.removeItem("sessionId"); // remove rest???
           });
-      } else if (playerBoard) {
-        console.log("Jugador 2 uniéndose a la partida:", gameId);
-        console.log("Tablero del jugador 2:", mapBoardToNames(playerBoard));
+      };
+
+      const joinedAlready = sessionStorage.getItem("joinedAlready") === "true";
+
+      if (
+        !joinedAlready &&
+        sessionStorage.getItem("isFirstPlayer") === "false" &&
+        initialBoardState
+      ) {
+        // Jugador 2: hace join y luego resume
+        console.log("Jugador 2 se une enviando su board:", initialBoardState);
         client.publish({
           destination: `/app/game/multiplayer/${gameId}/join`,
-          body: JSON.stringify({ playerId, board: playerBoard }),
+          body: JSON.stringify({ playerId, board: initialBoardState }),
         });
-        setPlayerBoard(mapBoardToNames(playerBoard));
+
+        sessionStorage.setItem("joinedAlready", "true");
+
+        setTimeout(() => {
+          setInitialBoardState(null); // Limpiar después de haber dado tiempo a enviar
+          resume();
+        }, 300); // espero para que el back pueda procesar el join
+      } else {
+        // Jugador 1 o recarga → solo resume
+        resume();
       }
+    };
+
+    client.onStompError = (err) => {
+      console.error("❌ Error STOMP:", err);
     };
 
     client.activate();
@@ -190,7 +225,7 @@ function RandomUserGame() {
       stompClient.current = null;
       stompInitialized.current = false;
     };
-  }, [isReady, gameId, playerId, handleGameEvent, location.state]);
+  }, [isReady, gameId, playerId, handleGameEvent]);
 
   const handleCellClick = (row, col) => {
     if (!isPlayerTurn || gameOver || opponentBoard?.[row]?.[col] !== null)
@@ -208,6 +243,9 @@ function RandomUserGame() {
       destination: `/app/game/multiplayer/${gameId}/abandon`,
       body: JSON.stringify({ playerId }),
     });
+    sessionStorage.removeItem("isFirstPlayer");
+    sessionStorage.removeItem("joinedAlready");
+
     navigate("/");
   };
 

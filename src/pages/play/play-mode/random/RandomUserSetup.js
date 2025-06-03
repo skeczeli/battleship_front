@@ -47,12 +47,13 @@ function RandomUserSetup() {
         gameId = waitingData.gameId;
         console.log("Unirse a la sala existente:", gameId);
 
+        sessionStorage.setItem("isFirstPlayer", "false");
+
         navigate(`/play-mode/random/game/${gameId}`, {
           state: {
             playerBoard: numericBoard,
             gameId,
             playerId,
-            isFirstPlayer: false,
           },
         });
       } else {
@@ -76,8 +77,10 @@ function RandomUserSetup() {
         gameId = data.gameId;
         console.log("Sala creada con éxito:", gameId);
 
+        sessionStorage.setItem("isFirstPlayer", "true");
+
         navigate(`/play-mode/random/game/${gameId}`, {
-          state: { playerBoard: board, gameId, playerId, isFirstPlayer: true },
+          state: { playerBoard: board, gameId, playerId },
         });
       }
     } catch (error) {
