@@ -5,89 +5,118 @@ import { Client } from "@stomp/stompjs";
 import GameBoard from "components/Board";
 import { useUser } from "contexts/UserContext";
 import "styles/game.css";
-import "styles/enhanced-board.css"; // ← Agregar este import
+import "styles/enhanced-board.css";
 
 function RandomUserGame() {
   const location = useLocation();
   const { gameId } = useParams();
-  const { user, playerId, isReady } = useUser(); // ← Agregar user
+  const { user, playerId, isReady } = useUser();
   const navigate = useNavigate();
 
-  const [playerBoard, setPlayerBoard] = useState(location.state?.playerBoard || null);
+  const [playerBoard, setPlayerBoard] = useState(
+    location.state?.playerBoard || null
+  );
   const [opponentBoard, setOpponentBoard] = useState(
-    Array(10).fill().map(() => Array(10).fill(null))
+    Array(10)
+      .fill()
+      .map(() => Array(10).fill(null))
   );
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
   const [gameStatus, setGameStatus] = useState("Cargando partida...");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [winner, setWinner] = useState(null); // ← Agregar estado winner
+  const [winner, setWinner] = useState(null);
 
   const stompClient = useRef(null);
   const stompInitialized = useRef(false);
 
-  const handleGameEvent = useCallback((data) => {
-    switch (data.type) {
-      case "GAME_START":
-        setGameStarted(true);
-        setGameStatus("Juego iniciado");
-        setIsPlayerTurn(data.turn === playerId);
-        break;
-      case "SHOT_RESULT":
-        const isOwn = data.playerId === playerId;
+  const mapBoardToNames = (board) => {
+    const shipIdToName = {
+      1: "portaaviones",
+      2: "acorazado",
+      3: "submarino",
+      4: "destructor",
+      5: "lancha",
+    };
+    return board.map((row) =>
+      row.map((cell) => {
+        if (cell === null) return null;
+        if (cell === 0) return "miss";
+        if (cell < 0) return "hit";
+        return shipIdToName[cell] ?? null;
+      })
+    );
+  };
 
-        if (isOwn) {
-          setOpponentBoard((prev) =>
-            prev.map((row, r) =>
-              row.map((cell, c) =>
-                r === data.row && c === data.col ? data.hit : cell
-              )
-            )
-          );
-          if (data.shipSunk) {
-            setSunkShips((prev) => ({
-              ...prev,
-              opponent: [...prev.opponent, "unknown"],
-            }));
-          }
-        } else {
-          setPlayerBoard((prev) =>
-            prev.map((row, r) =>
-              row.map((cell, c) =>
-                r === data.row && c === data.col ? data.hit : cell
-              )
-            )
-          );
-          if (data.shipSunk) {
-            setSunkShips((prev) => ({
-              ...prev,
-              player: [...prev.player, "unknown"],
-            }));
-          }
-        }
+  const handleGameEvent = useCallback(
+    (data) => {
+      switch (data.type) {
+        case "GAME_START":
+          setGameStarted(true);
+          setGameStatus("Juego iniciado");
+          setIsPlayerTurn(data.turn === playerId);
+          break;
+        case "SHOT_RESULT":
+          const isOwn = data.playerId === playerId;
 
-        if (data.gameOver) {
+          if (isOwn) {
+            setOpponentBoard((prev) =>
+              prev.map((row, r) =>
+                row.map((cell, c) =>
+                  r === data.row && c === data.col ? data.hit : cell
+                )
+              )
+            );
+            if (data.shipSunk) {
+              setSunkShips((prev) => ({
+                ...prev,
+                opponent: [...prev.opponent, "unknown"],
+              }));
+            }
+          } else {
+            setPlayerBoard((prev) =>
+              prev.map((row, r) =>
+                row.map((cell, c) =>
+                  r === data.row && c === data.col ? data.hit : cell
+                )
+              )
+            );
+            if (data.shipSunk) {
+              setSunkShips((prev) => ({
+                ...prev,
+                player: [...prev.player, "unknown"],
+              }));
+            }
+          }
+
+          if (data.gameOver) {
+            setGameOver(true);
+            setWinner(data.winner === playerId);
+            setGameStatus(
+              data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!"
+            );
+          } else {
+            setIsPlayerTurn(data.nextTurn === playerId);
+            setGameStatus(
+              data.nextTurn === playerId ? "Tu turno" : "Turno del oponente"
+            );
+          }
+          break;
+        case "GAME_ABANDONED":
+          setGameStatus("El oponente abandonó la partida");
           setGameOver(true);
-          setWinner(data.winner === playerId); // ← Agregar esto
-          setGameStatus(data.winner === playerId ? "¡Ganaste!" : "¡Perdiste!");
-        } else {
-          setIsPlayerTurn(data.nextTurn === playerId);
-          setGameStatus(data.nextTurn === playerId ? "Tu turno" : "Turno del oponente");
-        }
-        break;
-      case "GAME_ABANDONED":
-        setGameStatus("El oponente abandonó la partida");
-        setGameOver(true);
-        setWinner(true); // ← Ganar por abandono
-        break;
-      case "ERROR":
-        setGameStatus("Error: " + data.error);
-        break;
-      default:
-        break;
-    }
-  }, [playerId]);
+          setWinner(true);
+          break;
+        case "ERROR":
+          setGameStatus("Error: " + data.error);
+          break;
+        default:
+          break;
+      }
+    },
+    [playerId]
+  );
 
   useEffect(() => {
     if (!isReady || !gameId || !playerId || stompInitialized.current) return;
@@ -100,18 +129,24 @@ function RandomUserGame() {
     });
 
     client.onConnect = () => {
+      console.log("Conectado al servidor de WebSocket");
       client.subscribe(`/topic/game/${gameId}`, (msg) => {
         const data = JSON.parse(msg.body);
+        console.log("Evento del juego recibido:", data);
         handleGameEvent(data);
       });
 
-      // Solo jugador 1 reanuda
-      if (location.state?.isFirstPlayer) {
-        fetch(`http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`)
+      const { isFirstPlayer, playerBoard } = location.state || {};
+
+      console.log(isFirstPlayer, playerBoard);
+
+      if (isFirstPlayer) {
+        console.log("Jugador 1 uniéndose a la partida:", gameId);
+        fetch(
+          `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
+        )
           .then((res) => {
-            if (!res.ok) {
-              throw new Error("No se encontró la partida");
-            }
+            if (!res.ok) throw new Error("No se encontró la partida");
             return res.json();
           })
           .then((data) => {
@@ -120,18 +155,30 @@ function RandomUserGame() {
               return;
             }
 
+            console.log("Partida reanudada:", data);
+
             setPlayerBoard(data.playerBoard);
             setSunkShips(data.sunkShips);
             setGameOver(data.gameOver);
             setIsPlayerTurn(data.turn === playerId);
             if (data.gameOver || data.turn) setGameStarted(true);
-            setGameStatus(data.turn === playerId ? "Tu turno" : "Turno del oponente");
+            setGameStatus(
+              data.turn === playerId ? "Tu turno" : "Turno del oponente"
+            );
           })
           .catch((err) => {
             console.error("Error:", err);
             setGameStatus("Error al reanudar la partida. Empezá una nueva.");
             sessionStorage.removeItem("sessionId");
           });
+      } else if (playerBoard) {
+        console.log("Jugador 2 uniéndose a la partida:", gameId);
+        console.log("Tablero del jugador 2:", mapBoardToNames(playerBoard));
+        client.publish({
+          destination: `/app/game/multiplayer/${gameId}/join`,
+          body: JSON.stringify({ playerId, board: playerBoard }),
+        });
+        setPlayerBoard(mapBoardToNames(playerBoard));
       }
     };
 
@@ -145,22 +192,9 @@ function RandomUserGame() {
     };
   }, [isReady, gameId, playerId, handleGameEvent, location.state]);
 
-  // Join del jugador 2 después de Setup
-  useEffect(() => {
-    if (!isReady || !gameId || !playerId || !stompClient.current) return;
-
-    const { isFirstPlayer, playerBoard } = location.state || {};
-
-    if (!isFirstPlayer && playerBoard) {
-      stompClient.current.publish({
-        destination: `/app/game/multiplayer/${gameId}/join`,
-        body: JSON.stringify({ playerId, board: playerBoard }),
-      });
-    }
-  }, [isReady, gameId, playerId, location.state]);
-
   const handleCellClick = (row, col) => {
-    if (!isPlayerTurn || gameOver || opponentBoard?.[row]?.[col] !== null) return;
+    if (!isPlayerTurn || gameOver || opponentBoard?.[row]?.[col] !== null)
+      return;
     stompClient.current?.publish({
       destination: `/app/game/multiplayer/${gameId}/shot`,
       body: JSON.stringify({ row, col, playerId }),
@@ -177,7 +211,6 @@ function RandomUserGame() {
     navigate("/");
   };
 
-  // ← Agregar función para contador de barcos
   const renderShipCounter = () => {
     const totalShips = 5;
     return (
@@ -211,9 +244,10 @@ function RandomUserGame() {
   }
 
   return (
-    <div className="game-container bots-setup-container"> {/* ← Agregar clase bots-setup-container */}
+    <div className="game-container bots-setup-container">
+      {" "}
+      {/* ← Agregar clase bots-setup-container */}
       <h2>Modo Multijugador Aleatorio</h2>
-
       {/* ← Agregar info del jugador */}
       <div className="player-info">
         <p>
@@ -223,25 +257,24 @@ function RandomUserGame() {
           </span>
         </p>
       </div>
-
       {/* ← Mejorar estado del juego */}
       <div className="game-status">
         <p className={gameOver ? (winner ? "win-status" : "lose-status") : ""}>
           {gameStatus}
         </p>
       </div>
-
       {/* ← Agregar contador de barcos */}
       {renderShipCounter()}
-
       <div className="boards-container">
         <div className="board-section">
           <h3>Tu tablero</h3>
-          <div className="board-wrapper"> {/* ← Agregar wrapper */}
-            <GameBoard 
-              board={playerBoard} 
-              isPlayerBoard={true} 
-              onCellClick={() => {}} 
+          <div className="board-wrapper">
+            {" "}
+            {/* ← Agregar wrapper */}
+            <GameBoard
+              board={playerBoard}
+              isPlayerBoard={true}
+              onCellClick={() => {}}
               sunkShips={sunkShips.player}
               isGameMode={true}
             />
@@ -249,19 +282,20 @@ function RandomUserGame() {
         </div>
         <div className="board-section">
           <h3>Tablero del oponente</h3>
-          <div className="board-wrapper"> {/* ← Agregar wrapper */}
-            <GameBoard 
-              board={opponentBoard} 
-              isPlayerBoard={false} 
-              onCellClick={handleCellClick} 
-              isPlayerTurn={isPlayerTurn} 
+          <div className="board-wrapper">
+            {" "}
+            {/* ← Agregar wrapper */}
+            <GameBoard
+              board={opponentBoard}
+              isPlayerBoard={false}
+              onCellClick={handleCellClick}
+              isPlayerTurn={isPlayerTurn}
               sunkShips={sunkShips.opponent}
               isGameMode={true}
             />
           </div>
         </div>
       </div>
-
       {/* ← Mejorar botón de salida */}
       {gameOver ? (
         <div className="game-over">
