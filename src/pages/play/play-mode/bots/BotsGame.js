@@ -257,36 +257,53 @@ function BotsGame() {
     );
   };
 
-  const renderShotHistory = () => {
-    if (!shotHistory || shotHistory.length === 0) return null;
-
+const renderShotHistory = () => {
+  if (!shotHistory || shotHistory.length === 0) {
     return (
       <div className="shot-history">
-        <h3>Historial de disparos</h3>
+        <h3>Historial de Disparos</h3>
         <div className="history-list">
-          {shotHistory.map((shot, index) => {
-            const isHit = shot.hit === "hit";
-            const playerText = shot.player === "player" ? "Tú" : "Bot";
-            const position = `[${String.fromCharCode(65 + shot.col)}${
-              shot.row + 1
-            }]`;
-
-            return (
-              <div key={index} className="history-item">
-                {playerText} → {position}:
-                <span className={isHit ? "hit" : "miss"}>
-                  {isHit ? "Impacto" : "Agua"}
-                </span>
-                {shot.message && (
-                  <span className="shot-message"> - {shot.message}</span>
-                )}
-              </div>
-            );
-          })}
+          <div className="history-item" style={{ textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+            No hay disparos aún...
+          </div>
         </div>
       </div>
     );
-  };
+  }
+
+  // Mostrar los últimos disparos primero (orden inverso)
+  const reversedHistory = [...shotHistory].reverse();
+
+  return (
+    <div className="shot-history">
+      <h3>Historial de Disparos</h3>
+      <div className="history-list">
+        {reversedHistory.map((shot, index) => {
+          const isHit = shot.hit === "hit";
+          const playerText = shot.player === "player" ? "Tú" : "Bot";
+          const position = `${String.fromCharCode(65 + shot.col)}${shot.row + 1}`;
+          const originalIndex = shotHistory.length - index; // Número de disparo original
+
+          return (
+            <div key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`} className="history-item">
+              <div style={{ fontWeight: '600', color: '#475569' }}>
+                #{originalIndex} {playerText} → {position}
+              </div>
+              <span className={isHit ? "hit" : "miss"}>
+                {isHit ? "IMPACTO" : "AGUA"}
+              </span>
+              {shot.message && (
+                <div className="shot-message">
+                  {shot.message}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
   const renderShipCounter = () => {
     const totalShips = 5;
@@ -351,6 +368,7 @@ function BotsGame() {
               onCellClick={() => {}}
               sunkShips={sunkShips.player}
               isGameMode={true}
+              className="player-board"
             />
           </div>
         </div>
@@ -365,11 +383,14 @@ function BotsGame() {
               isPlayerTurn={isPlayerTurn && !gameOver}
               sunkShips={sunkShips.opponent}
               isGameMode={true}
+              className="opponent-board"
             />
           </div>
         </div>
 
-        <div className="board-section">{renderShotHistory()}</div>
+          <div className="board-section history-section">
+            {renderShotHistory()}
+          </div>
       </div>
 
       {renderLastShot()}
