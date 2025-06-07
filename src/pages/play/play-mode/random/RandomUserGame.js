@@ -239,10 +239,12 @@ function RandomUserGame() {
   };
 
   const handleExitGame = () => {
-    stompClient.current?.publish({
-      destination: `/app/game/multiplayer/${gameId}/abandon`,
-      body: JSON.stringify({ playerId }),
-    });
+    if (!gameOver) {
+      stompClient.current?.publish({
+        destination: `/app/game/multiplayer/${gameId}/abandon`,
+        body: JSON.stringify({ playerId }),
+      });
+    }
     sessionStorage.removeItem("isFirstPlayer");
     sessionStorage.removeItem("joinedAlready");
 
