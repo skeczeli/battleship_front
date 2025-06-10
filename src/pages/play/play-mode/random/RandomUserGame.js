@@ -1,3 +1,5 @@
+// REEMPLAZAR RandomUserGame.js con esto:
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
@@ -22,6 +24,8 @@ function RandomUserGame() {
       .map(() => Array(10).fill(null))
   );
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
+  const [shotHistory, setShotHistory] = useState([]); // ← Agregar historial
+  const [lastShot, setLastShot] = useState(null); // ← Agregar último disparo
   const [gameStatus, setGameStatus] = useState("Cargando partida...");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -63,6 +67,18 @@ function RandomUserGame() {
           break;
         case "SHOT_RESULT":
           const isOwn = data.playerId === playerId;
+
+          // Agregar al historial
+          const shotData = {
+            row: data.row,
+            col: data.col,
+            hit: data.hit,
+            player: isOwn ? "player" : "opponent",
+            message: data.shipSunk ? (isOwn ? "¡Hundiste un barco!" : "¡El oponente hundió tu barco!") : undefined,
+          };
+
+          setShotHistory((prev) => [...prev, shotData]);
+          setLastShot(shotData);
 
           if (isOwn) {
             setOpponentBoard((prev) =>
@@ -113,7 +129,6 @@ function RandomUserGame() {
           setWinner(true);
           sessionStorage.removeItem("isFirstPlayer");
           sessionStorage.removeItem("joinedAlready");
-
           break;
         case "ERROR":
           setGameStatus("Error: " + data.message);
@@ -138,7 +153,6 @@ function RandomUserGame() {
     client.onConnect = () => {
       console.log("✅ Conectado al WebSocket");
 
-      // Suscribirse al topic del juego
       client.subscribe(`/topic/game/${gameId}`, (msg) => {
         const data = JSON.parse(msg.body);
         console.log("📩 Evento recibido:", data);
@@ -147,8 +161,6 @@ function RandomUserGame() {
 
       const resume = () => {
         console.log("🟢 Ejecutando resume()");
-        console.log("Usando gameId:", gameId);
-        console.log("Usando playerId:", playerId);
         fetch(
           `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
         )
@@ -166,6 +178,8 @@ function RandomUserGame() {
             setPlayerBoard(mapBoardToNames(data.playerBoard));
             setOpponentBoard(data.opponentBoard);
             setSunkShips(data.sunkShips);
+            setShotHistory(data.shotHistory || []); // ← Restaurar historial
+            setLastShot(data.lastShot || null); // ← Restaurar último disparo
             setGameOver(data.gameOver);
             setWinner(data.winner === playerId);
             setIsPlayerTurn(data.turn === playerId && !data.gameOver);
@@ -183,7 +197,7 @@ function RandomUserGame() {
           .catch((err) => {
             console.error("❌ Error al reanudar la partida:", err);
             setGameStatus("Error al reanudar la partida. Empezá una nueva.");
-            sessionStorage.removeItem("sessionId"); // remove rest???
+            sessionStorage.removeItem("sessionId");
           });
       };
 
@@ -194,7 +208,6 @@ function RandomUserGame() {
         sessionStorage.getItem("isFirstPlayer") === "false" &&
         initialBoardState
       ) {
-        // Jugador 2: hace join y luego resume
         console.log("Jugador 2 se une enviando su board:", initialBoardState);
         client.publish({
           destination: `/app/game/multiplayer/${gameId}/join`,
@@ -204,11 +217,10 @@ function RandomUserGame() {
         sessionStorage.setItem("joinedAlready", "true");
 
         setTimeout(() => {
-          setInitialBoardState(null); // Limpiar después de haber dado tiempo a enviar
+          setInitialBoardState(null);
           resume();
-        }, 300); // espero para que el back pueda procesar el join
+        }, 300);
       } else {
-        // Jugador 1 o recarga → solo resume
         resume();
       }
     };
@@ -245,8 +257,77 @@ function RandomUserGame() {
     });
     sessionStorage.removeItem("isFirstPlayer");
     sessionStorage.removeItem("joinedAlready");
-
     navigate("/");
+  };
+
+  // ← Función para renderizar último disparo (igual que en BotsGame)
+  const renderLastShot = () => {
+    if (!lastShot) return null;
+
+    const { row, col, hit, player, message } = lastShot;
+    const isHit = hit === "hit";
+    const resultText = isHit ? "¡Impacto!" : "Agua";
+    const playerText =
+      player === "player" ? "Tu disparo" : "Disparo del oponente";
+    const position = `[${String.fromCharCode(65 + col)}${row + 1}]`;
+
+    return (
+      <div className="last-shot">
+        <p>
+          {playerText} en {position}:{" "}
+          <span className={isHit ? "hit" : "miss"}>{resultText}</span>
+        </p>
+        {message && <p className="shot-message">{message}</p>}
+      </div>
+    );
+  };
+
+  // ← Función para renderizar historial (igual que en BotsGame)
+  const renderShotHistory = () => {
+    if (!shotHistory || shotHistory.length === 0) {
+      return (
+        <div className="shot-history">
+          <h3>Historial de Disparos</h3>
+          <div className="history-list">
+            <div className="history-item" style={{ textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+              No hay disparos aún...
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const reversedHistory = [...shotHistory].reverse();
+
+    return (
+      <div className="shot-history">
+        <h3>Historial de Disparos</h3>
+        <div className="history-list">
+          {reversedHistory.map((shot, index) => {
+            const isHit = shot.hit === "hit";
+            const playerText = shot.player === "player" ? "Tú" : "Oponente";
+            const position = `${String.fromCharCode(65 + shot.col)}${shot.row + 1}`;
+            const originalIndex = shotHistory.length - index;
+
+            return (
+              <div key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`} className="history-item">
+                <div style={{ fontWeight: '600', color: '#475569' }}>
+                  #{originalIndex} {playerText} → {position}
+                </div>
+                <span className={isHit ? "hit" : "miss"}>
+                  {isHit ? "IMPACTO" : "AGUA"}
+                </span>
+                {shot.message && (
+                  <div className="shot-message">
+                    {shot.message}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const renderShipCounter = () => {
@@ -283,10 +364,8 @@ function RandomUserGame() {
 
   return (
     <div className="game-container bots-setup-container">
-      {" "}
-      {/* ← Agregar clase bots-setup-container */}
       <h2>Modo Multijugador Aleatorio</h2>
-      {/* ← Agregar info del jugador */}
+      
       <div className="player-info">
         <p>
           Jugando como:{" "}
@@ -295,34 +374,33 @@ function RandomUserGame() {
           </span>
         </p>
       </div>
-      {/* ← Mejorar estado del juego */}
+      
       <div className="game-status">
         <p className={gameOver ? (winner ? "win-status" : "lose-status") : ""}>
           {gameStatus}
         </p>
       </div>
-      {/* ← Agregar contador de barcos */}
+      
       {renderShipCounter()}
+
       <div className="boards-container">
         <div className="board-section">
           <h3>Tu tablero</h3>
           <div className="board-wrapper">
-            {" "}
-            {/* ← Agregar wrapper */}
             <GameBoard
               board={playerBoard}
               isPlayerBoard={true}
               onCellClick={() => {}}
               sunkShips={sunkShips.player}
               isGameMode={true}
+              className="player-board" // ← Agregar className
             />
           </div>
         </div>
+        
         <div className="board-section">
           <h3>Tablero del oponente</h3>
           <div className="board-wrapper">
-            {" "}
-            {/* ← Agregar wrapper */}
             <GameBoard
               board={opponentBoard}
               isPlayerBoard={false}
@@ -330,11 +408,20 @@ function RandomUserGame() {
               isPlayerTurn={isPlayerTurn}
               sunkShips={sunkShips.opponent}
               isGameMode={true}
+              className="opponent-board" // ← Agregar className
             />
           </div>
         </div>
+
+        {/* ← Agregar historial */}
+        <div className="board-section history-section">
+          {renderShotHistory()}
+        </div>
       </div>
-      {/* ← Mejorar botón de salida */}
+
+      {/* ← Agregar último disparo */}
+      {renderLastShot()}
+
       {gameOver ? (
         <div className="game-over">
           <h3>
