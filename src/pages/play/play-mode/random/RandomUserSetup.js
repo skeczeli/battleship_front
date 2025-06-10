@@ -2,6 +2,10 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Setup from "components/Setup";
 import { useUser } from "contexts/UserContext";
+import "styles/main.css"; // ← Agregar este import
+import "styles/bots-setup.css"; // ← Agregar este import
+import "styles/enhanced-board.css"; // ← Agregar este import
+import "App.css"; // ← Agregar este import
 
 const shipMap = {
   portaaviones: 1,
@@ -48,6 +52,7 @@ function RandomUserSetup() {
         console.log("Unirse a la sala existente:", gameId);
 
         sessionStorage.setItem("isFirstPlayer", "false");
+        sessionStorage.setItem("joinedAlready", "false");
 
         navigate(`/play-mode/random/game/${gameId}`, {
           state: {
@@ -90,8 +95,11 @@ function RandomUserSetup() {
   };
 
   return (
-    <div>
-      <h2>Modo Multijugador Aleatorio</h2>
+    <div className="bots-setup-container"> {/* ← Agregar la clase contenedora */}
+      <div className="setup-header"> {/* ← Agregar header como en BotsSetup */}
+        <h2>Modo Multijugador Aleatorio</h2>
+      </div>
+
       <div className="player-info">
         <p>
           Jugando como:{" "}
@@ -100,6 +108,7 @@ function RandomUserSetup() {
           </span>
         </p>
       </div>
+      
       <Setup onConfirm={handleConfirm} />
     </div>
   );
