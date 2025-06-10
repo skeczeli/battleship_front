@@ -170,6 +170,11 @@ function BotsGame() {
       fetch(`http://localhost:8080/api/game/resume/${gameId}/${playerId}`)
         .then((res) => res.json())
         .then((data) => {
+          if (data.error !== undefined) {
+            setGameStatus(data.error);
+            navigate("/");
+            return;
+          }
           setPlayerBoard(mapBoardToNames(data.playerBoard));
           setOpponentBoard(data.botBoard);
           setSunkShips(data.sunkShips);
