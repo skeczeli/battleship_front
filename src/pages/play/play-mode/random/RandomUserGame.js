@@ -18,11 +18,16 @@ function RandomUserGame() {
   const [playerBoard, setPlayerBoard] = useState(
     location.state?.playerBoard || null
   );
-  const [opponentBoard, setOpponentBoard] = useState(
-    Array(10)
+  const [opponentBoard, setOpponentBoard] = useState(() => {
+    const savedSize =
+      location.state?.playerBoard?.length ||
+      JSON.parse(sessionStorage.getItem("gameConfig") || "{}")?.boardSize ||
+      10;
+    return Array(savedSize)
       .fill()
-      .map(() => Array(10).fill(null))
-  );
+      .map(() => Array(savedSize).fill(null));
+  });
+
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
   const [shotHistory, setShotHistory] = useState([]); // ← Agregar historial
   const [lastShot, setLastShot] = useState(null); // ← Agregar último disparo
