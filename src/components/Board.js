@@ -18,6 +18,7 @@ function Board({
   onCellHover,
   onBoardLeave,
   isGameMode = false,
+  boardSize = 10, // Agregar esta prop
 }) {
   // Función para determinar si una celda está destacada (para preview)
   const isCellHighlighted = (row, col) => {
@@ -38,12 +39,13 @@ function Board({
         cellClass += ` ${cellContent}`;
       } else if (cellContent && typeof cellContent === "string") {
         // Mostramos barcos normalmente (en tablero propio)
-        cellClass += ` ship-${cellContent}`;
+        cellClass += ` ship-${cellContent.split('-')[0]}`;
       }
     } else {
-      // En modo setup, solo mostramos barcos
+      // En modo setup, mostramos barcos por su ID completo
       if (cellContent && typeof cellContent === "string") {
-        cellClass += ` ship-${cellContent}`;
+        const shipType = cellContent.split('-')[0]; // Extraer tipo del ID
+        cellClass += ` ship-${shipType}`;
       }
     }
 
@@ -60,14 +62,16 @@ function Board({
         data-state={
           cellContent === "hit" || cellContent === "miss" ? cellContent : null
         }
+        data-ship={cellContent && typeof cellContent === "string" ? cellContent : null}
       ></div>
     );
   };
 
   // Renderizar las etiquetas de coordenadas
   const renderCoordinateLabels = () => {
-    const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-    const numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+    const boardSize = board.length; // CAMBIO 1: Detectar tamaño automáticamente
+    const letters = Array.from({ length: boardSize }, (_, i) => String.fromCharCode(65 + i)); // CAMBIO 2: Generar dinámicamente
+    const numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
 
     return (
       <>
@@ -93,7 +97,11 @@ function Board({
   };
 
   return (
-    <div className="board" onMouseLeave={onBoardLeave}>
+    <div 
+      className="board" 
+      onMouseLeave={onBoardLeave}
+      data-size={boardSize <= 6 ? "small" : boardSize >= 14 ? "large" : "normal"}
+    >
       {renderCoordinateLabels()}
     </div>
   );

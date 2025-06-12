@@ -21,6 +21,7 @@ function BotsGame() {
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [gameConfig, setGameConfig] = useState(null);
 
   const stompClient = useRef(null);
   const stompInitialized = useRef(false);
@@ -33,6 +34,8 @@ function BotsGame() {
       3: "submarino",
       4: "destructor",
       5: "lancha",
+      6: "fragata",
+      7: "superportaaviones"
     };
     return board.map((row) =>
       row.map((cell) => {
@@ -195,6 +198,9 @@ function BotsGame() {
         });
     };
 
+    const savedConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "null");
+    setGameConfig(savedConfig);
+
     client.onStompError = (err) => {
       console.error("🔴 STOMP error:", err);
     };
@@ -305,29 +311,32 @@ const renderShotHistory = () => {
   );
 };
 
-  const renderShipCounter = () => {
-    const totalShips = 5;
-    return (
-      <div className="ship-counter">
-        <div className="player-counter">
-          <p>
-            Tus barcos hundidos:{" "}
-            <span className="counter">
-              {sunkShips.player.length}/{totalShips}
-            </span>
-          </p>
-        </div>
-        <div className="opponent-counter">
-          <p>
-            Barcos enemigos hundidos:{" "}
-            <span className="counter">
-              {sunkShips.opponent.length}/{totalShips}
-            </span>
-          </p>
-        </div>
+const renderShipCounter = () => {
+  // Obtener configuración del juego desde sessionStorage
+  const gameConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "{}");
+  const totalShips = gameConfig.totalShips;
+  
+  return (
+    <div className="ship-counter">
+      <div className="player-counter">
+        <p>
+          Tus barcos hundidos:{" "}
+          <span className="counter">
+            {sunkShips.player.length}/{totalShips}
+          </span>
+        </p>
       </div>
-    );
-  };
+      <div className="opponent-counter">
+        <p>
+          Barcos enemigos hundidos:{" "}
+          <span className="counter">
+            {sunkShips.opponent.length}/{totalShips}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
   if (!isReady || !playerBoard || !opponentBoard) {
     return (
@@ -364,6 +373,7 @@ const renderShotHistory = () => {
           <div className="board-wrapper">
             <GameBoard
               board={playerBoard}
+              boardSize={gameConfig.boardSize}
               isPlayerBoard={true}
               onCellClick={() => {}}
               sunkShips={sunkShips.player}
@@ -377,7 +387,7 @@ const renderShotHistory = () => {
           <h3>Tablero del oponente</h3>
           <div className="board-wrapper">
             <GameBoard
-              board={opponentBoard}
+              board={opponentBoard}    
               isPlayerBoard={false}
               onCellClick={handleCellClick}
               isPlayerTurn={isPlayerTurn && !gameOver}

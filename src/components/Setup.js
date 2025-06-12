@@ -5,8 +5,8 @@ import Board from "./Board";
 import ShipList from "./ShipList";
 import useBoard from "../hooks/useBoard";
 
-// Definición de barcos
-const ships = [
+// Definición de barcos por defecto (fallback)
+const defaultShips = [
   { id: "portaaviones", name: "Portaaviones", size: 5 },
   { id: "acorazado", name: "Acorazado", size: 4 },
   { id: "submarino", name: "Submarino", size: 3 },
@@ -20,15 +20,42 @@ const ships = [
 function Setup({ 
   onConfirm, 
   buttonText = "Confirmar", 
-  showJoinOption = false 
+  showJoinOption = false,
+  gameConfig, // NUEVA PROP
+  boardSize = 10 // NUEVA PROP
 }) {
   // Estado para el input del gameId (solo para multiplayer)
   const [gameIdInput, setGameIdInput] = useState("");
 
-  // Cargar datos guardados en localStorage
-  const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
+  // Usar barcos desde gameConfig o usar los por defecto
+  const ships = gameConfig?.ships ? 
+    gameConfig.ships.flatMap(ship => 
+      Array.from({ length: ship.count }, (_, i) => {
+        let name = ship.type.charAt(0).toUpperCase() + ship.type.slice(1);
+        
+        // Para múltiples barcos del mismo tipo, agregar numeración
+        if (ship.count > 1) {
+          if (ship.type === 'portaaviones') {
+            name = i === 0 ? 'Portaaviones' : 'Superportaaviones';
+          } else {
+            name = `${name} ${i + 1}`;
+          }
+        }
+        
+        return {
+          id: `${ship.type}-${i}`,
+          name: name,
+          size: ship.size,
+          type: ship.type
+        };
+      })
+    ) : defaultShips;
 
-  // Inicializar el hook con los datos guardados
+  // Cargar datos guardados - pero solo si el tamaño coincide
+  const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
+  const canUseSavedState = savedState.board && savedState.board.length === boardSize;
+
+  // Inicializar el hook con los datos guardados (solo si son compatibles)
   const {
     board,
     placedShips,
@@ -44,7 +71,11 @@ function Setup({
     handleSelectShip,
     resetBoard,
     canPlaceAtCurrentPosition,
-  } = useBoard(savedState.board || null, savedState.placedShips || []);
+  } = useBoard(
+    canUseSavedState ? savedState.board : null, 
+    canUseSavedState ? savedState.placedShips : [],
+    boardSize // PASAR EL TAMAÑO DEL TABLERO
+  );
 
   // Función para manejar la confirmación del setup
   const handleConfirm = () => {
@@ -63,9 +94,12 @@ function Setup({
       board,
       placedShips,
       orientation,
+      boardSize // Guardar también el tamaño
     };
     localStorage.setItem("setupState", JSON.stringify(data));
-  }, [board, placedShips, orientation]);
+  }, [board, placedShips, orientation, boardSize]);
+
+  const totalShips = gameConfig?.totalShips || ships.length;
 
   return (
     <div className="setup-container">
@@ -102,11 +136,11 @@ function Setup({
           <button
             onClick={handleConfirm}
             disabled={
-              placedShips.length < ships.length || 
+              placedShips.length < totalShips || 
               (showJoinOption && gameIdInput.trim() === "")
             }
             title={
-              placedShips.length < ships.length
+              placedShips.length < totalShips
                 ? "Coloca todos los barcos para continuar"
                 : showJoinOption && gameIdInput.trim() === ""
                 ? "Ingresa un ID de partida válido"
@@ -121,13 +155,18 @@ function Setup({
 
       <div className="board-container">
         <h3>Coloca tus barcos</h3>
-        <div className="board-wrapper" onMouseLeave={handleBoardLeave}>
+        <div 
+          className="board-wrapper" 
+          onMouseLeave={handleBoardLeave}
+          data-size={boardSize <= 6 ? "small" : boardSize >= 14 ? "large" : "normal"}
+        >
           <Board
             board={board}
             onCellClick={handleCellClick}
             highlightedCells={highlightedCells}
             onCellHover={handleCellHover}
             onBoardLeave={handleBoardLeave}
+            boardSize={boardSize}
           />
           {hoveredCell &&
             selectedShip &&

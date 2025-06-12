@@ -19,25 +19,34 @@
   font-size: 2rem;
 }
 
-/* Selector de dificultad posicionado más abajo */
-.difficulty-selector-header {
+/* Contenedor para ambos selectores - CENTRADOS VERTICALMENTE */
+.selectors-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center; /* Centra los selectores */
+  gap: 15px;
   position: absolute;
-  top: 150px; /* Bajado más */
-  right: 0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 15px 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  top: 150px;
+  right: 20px; /* Más espacio del borde */
   z-index: 10;
 }
 
 /* Mover el contenido del setup hacia la izquierda */
 .bots-setup-container .setup-container {
-  margin-right: 250px; /* Espacio para el selector */
+  margin-right: 280px;
+}
+
+/* SELECTOR DE DIFICULTAD - TAMAÑO NORMAL */
+.difficulty-selector-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 15px 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 220px; /* Ancho fijo para el selector de dificultad */
 }
 
 .difficulty-selector-header:hover {
@@ -73,7 +82,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   background: transparent;
-  min-width: 70px;
+  flex: 1; /* Ocupan espacio igual */
   user-select: none;
 }
 
@@ -110,70 +119,17 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .setup-header {
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-  }
-  
-  .difficulty-selector-header {
-    position: static;
-    align-self: stretch;
-  }
-  
-  .difficulty-options {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .setup-header h2 {
-    font-size: 1.5rem;
-    text-align: center;
-  }
-  
-  .difficulty-selector-header {
-    padding: 12px 16px;
-  }
-  
-  .difficulty-option {
-    padding: 10px 12px;
-    min-width: 60px;
-  }
-  
-  .difficulty-icon {
-    font-size: 18px;
-  }
-  
-  .difficulty-option span {
-    font-size: 11px;
-  }
-}
-
-
-/* Contenedor para ambos selectores - EN VERTICAL */
-.selectors-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; /* Menos espacio entre selectores */
-  position: absolute;
-  top: 150px;
-  right: 0;
-  z-index: 10;
-}
-
-/* Selector de tamaño del juego - MÁS COMPACTO */
+/* SELECTOR DE TAMAÑO DEL JUEGO - MÁS COMPACTO */
 .game-size-selector {
   display: flex;
   flex-direction: column;
   gap: 8px;
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  padding: 12px 16px; /* Más compacto */
+  padding: 12px 16px;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 280px; /* Ancho fijo más grande para 3 opciones */
 }
 
 .game-size-selector:hover {
@@ -182,7 +138,7 @@
 }
 
 .size-label {
-  font-size: 13px; /* Más pequeño */
+  font-size: 13px;
   font-weight: 600;
   color: #0369a1;
   text-align: center;
@@ -192,7 +148,7 @@
 
 .size-options {
   display: flex;
-  gap: 6px; /* Menos espacio */
+  gap: 4px;
   background: white;
   padding: 3px;
   border-radius: 20px;
@@ -203,13 +159,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px; /* Menos espacio */
-  padding: 8px 10px; /* Más compacto */
+  gap: 2px;
+  padding: 8px 6px;
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   background: transparent;
-  min-width: 65px; /* Más pequeño */
+  flex: 1; /* Ocupan espacio igual */
   user-select: none;
 }
 
@@ -226,7 +182,7 @@
 }
 
 .size-icon {
-  font-size: 16px; /* Más pequeño */
+  font-size: 16px;
   line-height: 1;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
@@ -236,14 +192,14 @@
 }
 
 .size-option span {
-  font-size: 10px; /* Más pequeño */
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
   margin-bottom: 1px;
 }
 
 .size-option small {
-  font-size: 8px; /* Más pequeño */
+  font-size: 8px;
   opacity: 0.8;
   text-align: center;
   line-height: 1.1;
@@ -255,28 +211,106 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Responsive - SIMPLIFICADO */
+/* Responsive design */
 @media (max-width: 768px) {
+  .setup-header {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  
   .selectors-container {
     position: static;
     flex-direction: row;
     justify-content: center;
     margin-bottom: 20px;
     gap: 10px;
+    right: auto;
   }
   
   .game-size-selector,
   .difficulty-selector-header {
+    width: auto;
     flex: 1;
     max-width: 250px;
   }
   
-  .size-options {
-    gap: 4px;
+  .bots-setup-container .setup-container {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .setup-header h2 {
+    font-size: 1.5rem;
+    text-align: center;
   }
   
-  .size-option {
-    min-width: 50px;
-    padding: 6px 8px;
+  .difficulty-selector-header,
+  .game-size-selector {
+    padding: 12px 16px;
   }
+  
+  .difficulty-option {
+    padding: 10px 12px;
+  }
+  
+  .difficulty-icon {
+    font-size: 18px;
+  }
+  
+  .difficulty-option span {
+    font-size: 11px;
+  }
+}
+
+
+/* Estilos específicos para tablero grande (14x14) */
+.bots-setup-container .board[data-size="large"],
+.bots-setup-container .board-wrapper[data-size="large"] .board {
+  gap: 1px !important;
+  padding: 6px !important;
+}
+
+.bots-setup-container .board[data-size="large"] .coordinate-row,
+.bots-setup-container .board[data-size="large"] .board-row,
+.bots-setup-container .board-wrapper[data-size="large"] .coordinate-row,
+.bots-setup-container .board-wrapper[data-size="large"] .board-row {
+  gap: 1px !important;
+}
+
+.bots-setup-container .board[data-size="large"] .cell,
+.bots-setup-container .board[data-size="large"] .coordinate-cell,
+.bots-setup-container .board-wrapper[data-size="large"] .cell,
+.bots-setup-container .board-wrapper[data-size="large"] .coordinate-cell {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 10px !important;
+  border-radius: 4px !important;
+}
+
+.bots-setup-container .board[data-size="large"] .coordinate-cell,
+.bots-setup-container .board-wrapper[data-size="large"] .coordinate-cell {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+}
+
+/* Tablero wrapper más compacto para el grande */
+.bots-setup-container .board-wrapper[data-size="large"] {
+  max-width: 400px !important;
+  padding: 15px !important;
+}
+
+/* Estilos para tablero pequeño (6x6) - más grande */
+.bots-setup-container .board[data-size="small"] .cell,
+.bots-setup-container .board[data-size="small"] .coordinate-cell,
+.bots-setup-container .board-wrapper[data-size="small"] .cell,
+.bots-setup-container .board-wrapper[data-size="small"] .coordinate-cell {
+  width: 35px !important;
+  height: 35px !important;
+  font-size: 14px !important;
+}
+
+.bots-setup-container .board-wrapper[data-size="small"] {
+  max-width: 280px !important;
 }

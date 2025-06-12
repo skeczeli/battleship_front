@@ -31,6 +31,7 @@ function RandomUserGame() {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [gameConfig, setGameConfig] = useState(null);
 
   const { playerBoard: initialBoard } = location.state || {};
   const [initialBoardState, setInitialBoardState] = useState(initialBoard);
@@ -45,6 +46,8 @@ function RandomUserGame() {
       3: "submarino",
       4: "destructor",
       5: "lancha",
+      6: "fragata",
+      7: "superportaaviones"
     };
     return board.map((row) =>
       row.map((cell) => {
@@ -169,6 +172,7 @@ function RandomUserGame() {
             return res.json();
           })
           .then((data) => {
+            console.log("📦 Datos de resume:", data);
             if (data.status === "WAITING_FOR_OPPONENT") {
               setGameStatus("Esperando a que el oponente se una...");
               return;
@@ -201,6 +205,8 @@ function RandomUserGame() {
           });
       };
 
+      const savedConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "null");
+      setGameConfig(savedConfig);
       const joinedAlready = sessionStorage.getItem("joinedAlready") === "true";
 
       if (
@@ -330,31 +336,34 @@ function RandomUserGame() {
     );
   };
 
-  const renderShipCounter = () => {
-    const totalShips = 5;
-    return (
-      <div className="ship-counter">
-        <div className="player-counter">
-          <p>
-            Tus barcos hundidos:{" "}
-            <span className="counter">
-              {sunkShips.player.length}/{totalShips}
-            </span>
-          </p>
-        </div>
-        <div className="opponent-counter">
-          <p>
-            Barcos enemigos hundidos:{" "}
-            <span className="counter">
-              {sunkShips.opponent.length}/{totalShips}
-            </span>
-          </p>
-        </div>
+const renderShipCounter = () => {
+  // Obtener configuración del juego desde sessionStorage
+  if (!gameConfig) return null; // aún cargando
+  const totalShips = gameConfig.totalShips;
+  
+  return (
+    <div className="ship-counter">
+      <div className="player-counter">
+        <p>
+          Tus barcos hundidos:{" "}
+          <span className="counter">
+            {sunkShips.player.length}/{totalShips}
+          </span>
+        </p>
       </div>
-    );
-  };
+      <div className="opponent-counter">
+        <p>
+          Barcos enemigos hundidos:{" "}
+          <span className="counter">
+            {sunkShips.opponent.length}/{totalShips}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
-  if (!playerBoard || !opponentBoard || !gameStarted) {
+  if (!playerBoard || !opponentBoard || !gameStarted || !gameConfig) {
     return (
       <div className="game-container">
         <h2>{gameStatus}</h2>
@@ -389,6 +398,7 @@ function RandomUserGame() {
           <div className="board-wrapper">
             <GameBoard
               board={playerBoard}
+              boardSize={gameConfig.boardSize}
               isPlayerBoard={true}
               onCellClick={() => {}}
               sunkShips={sunkShips.player}

@@ -313,3 +313,44 @@
     gap: 1px !important;
   }
 }
+
+/* Fragata - Púrpura (para tablero grande) */
+.bots-setup-container .cell.ship-fragata,
+.bots-setup-container .cell[data-ship="fragata-0"] {
+  background: linear-gradient(145deg, #8b5cf6, #7c3aed) !important;
+  box-shadow: 
+    0 4px 12px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-sizing: border-box !important;
+}
+
+/* Fragata resaltada */
+.bots-setup-container .cell.highlight.ship-fragata {
+  background: linear-gradient(145deg, #a78bfa, #8b5cf6) !important;
+  box-shadow: 
+    0 0 25px rgba(139, 92, 246, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-sizing: border-box !important;
+}
+
+/* Superportaaviones - Color dorado/amarillo único */
+.bots-setup-container .cell[data-ship="portaaviones-1"] {
+  background: linear-gradient(145deg, #f59e0b, #d97706) !important;
+  box-shadow: 
+    0 4px 12px rgba(245, 158, 11, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-sizing: border-box !important;
+}
+
+/* Superportaaviones resaltado */
+.bots-setup-container .cell.highlight[data-ship="portaaviones-1"] {
+  background: linear-gradient(145deg, #fbbf24, #f59e0b) !important;
+  box-shadow: 
+    0 0 25px rgba(245, 158, 11, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-sizing: border-box !important;
+}

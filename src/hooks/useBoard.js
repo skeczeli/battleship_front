@@ -1,18 +1,18 @@
 // hooks/useBoard.js
 import { useState, useEffect, useCallback } from "react";
 
-const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
-  // Inicializa el tablero 10x10 si no se proporciona uno
+const useBoard = (initialBoardState = null, initialPlacedShips = [], boardSize = 10) => {
+  // Inicializa el tablero dinámico si no se proporciona uno
   const createEmptyBoard = () =>
-    Array.from({ length: 10 }, () => Array(10).fill(null));
+    Array.from({ length: boardSize }, () => Array(boardSize).fill(null));
 
   // Estado del tablero
   const [board, setBoard] = useState(() => {
     if (
       initialBoardState &&
       Array.isArray(initialBoardState) &&
-      initialBoardState.length === 10 &&
-      initialBoardState.every((row) => Array.isArray(row) && row.length === 10)
+      initialBoardState.length === boardSize &&
+      initialBoardState.every((row) => Array.isArray(row) && row.length === boardSize)
     ) {
       return initialBoardState;
     }
@@ -44,12 +44,12 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
       const newCol = shipOrientation === "horizontal" ? col + i : col;
 
       // Verifica que las celdas estén dentro del tablero
-      if (newRow >= 0 && newRow < 10 && newCol >= 0 && newCol < 10) {
+      if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize) {
         cells.push([newRow, newCol]);
       }
     }
     return cells;
-  }, []);
+  }, [boardSize]);
 
   // Inicializa shipPositions con info de los barcos ya colocados en el tablero inicial
   const initializeShipPositions = useCallback(() => {
@@ -59,8 +59,8 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     const shipCells = {}; // Agrupa las celdas por ID de barco
 
     // Recorre todo el tablero para encontrar todos los barcos
-    for (let row = 0; row < 10; row++) {
-      for (let col = 0; col < 10; col++) {
+    for (let row = 0; row < boardSize; row++) {
+      for (let col = 0; col < boardSize; col++) {
         const cellValue = initialBoardState[row][col];
         if (cellValue !== null && cellValue !== "hit" && cellValue !== "miss") {
           // Crea el array de celdas para este barco si no existe
@@ -97,7 +97,7 @@ const useBoard = (initialBoardState = null, initialPlacedShips = []) => {
     });
 
     return shipPositions;
-  }, [initialBoardState]);
+  }, [initialBoardState, boardSize]);
 
   // Estado para mantener un registro de las posiciones de los barcos
   const [shipPositions, setShipPositions] = useState(initializeShipPositions);

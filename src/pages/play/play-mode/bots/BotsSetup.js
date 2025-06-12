@@ -50,7 +50,7 @@ function BotsSetup() {
         { type: "acorazado", size: 4, count: 1 },
         { type: "submarino", size: 3, count: 1 },
         { type: "destructor", size: 3, count: 1 },
-        { type: "fragata", size: 3, count: 1 }, // Nuevo tipo de barco
+        { type: "fragata", size: 3, count: 1 },
         { type: "lancha", size: 2, count: 1 }
       ],
       totalShips: 7
@@ -65,15 +65,19 @@ function BotsSetup() {
     submarino: 3,
     destructor: 4,
     lancha: 5,
-    fragata: 6 // Nuevo mapeo para el barco adicional
+    fragata: 6
   };
 
   const mapBoardToIntegers = (board) => {
     return board.map((row) =>
-      row.map((cell) => (cell === null ? null : shipMap[cell] ?? null))
+      row.map((cell) => {
+        if (cell === null) return null;
+        const type = cell.split("-")[0];
+        return shipMap[type] ?? null;
+      })
     );
   };
-
+  
   const handleConfirm = async (board, placedShips) => {
     if (placedShips.length < currentConfig.totalShips) {
       alert(`Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`);
@@ -92,8 +96,7 @@ function BotsSetup() {
           board: numericBoard, 
           playerId, 
           difficulty,
-          gameSize, // Enviar el tamaño del juego
-          boardSize: currentConfig.boardSize
+          gameSize
         }),
       });
 
@@ -124,7 +127,7 @@ function BotsSetup() {
         <h2>Modo contra Bot</h2>
 
         <div className="selectors-container">
-          {/* Selector de dificultad */}
+          {/* Selector de dificultad - PRIMERO */}
           <div className="difficulty-selector-header">
             <label className="difficulty-label">Dificultad</label>
             <div className="difficulty-options">
@@ -149,7 +152,7 @@ function BotsSetup() {
             </div>
           </div>
 
-          {/* Selector de tamaño del juego - DEBAJO del de dificultad */}
+          {/* Selector de tamaño del juego - SEGUNDO */}
           <div className="game-size-selector">
             <label className="size-label">Tamaño del juego</label>
             <div className="size-options">
@@ -195,7 +198,9 @@ function BotsSetup() {
         onConfirm={handleConfirm} 
         gameConfig={currentConfig}
         boardSize={currentConfig.boardSize}
-        key={gameSize} // Fuerza re-render cuando cambia el tamaño
+        key={`setup-${gameSize}-${currentConfig.boardSize}`}
+        gameSize={gameSize}
+        ships={currentConfig.ships}
       />
     </div>
   );
