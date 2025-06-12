@@ -77,7 +77,11 @@ function RandomUserGame() {
             col: data.col,
             hit: data.hit,
             player: isOwn ? "player" : "opponent",
-            message: data.shipSunk ? (isOwn ? "¡Hundiste un barco!" : "¡El oponente hundió tu barco!") : undefined,
+            message: data.shipSunk
+              ? isOwn
+                ? "¡Hundiste un barco!"
+                : "¡El oponente hundió tu barco!"
+              : undefined,
           };
 
           setShotHistory((prev) => [...prev, shotData]);
@@ -168,13 +172,20 @@ function RandomUserGame() {
           `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
         )
           .then((res) => {
-            if (!res.ok) throw new Error("No se encontró la partida");
+            if (!res.ok && !res.status === "bad_request")
+              throw new Error("No se encontró la partida");
             return res.json();
           })
           .then((data) => {
             console.log("📦 Datos de resume:", data);
             if (data.status === "WAITING_FOR_OPPONENT") {
               setGameStatus("Esperando a que el oponente se una...");
+              return;
+            }
+
+            if (data.error !== undefined) {
+              setGameStatus(data.error);
+              navigate("/");
               return;
             }
 
@@ -225,7 +236,7 @@ function RandomUserGame() {
         setTimeout(() => {
           setInitialBoardState(null);
           resume();
-        }, 300);
+        }, 500);
       } else {
         resume();
       }
@@ -257,10 +268,12 @@ function RandomUserGame() {
   };
 
   const handleExitGame = () => {
-    stompClient.current?.publish({
-      destination: `/app/game/multiplayer/${gameId}/abandon`,
-      body: JSON.stringify({ playerId }),
-    });
+    if (!gameOver) {
+      stompClient.current?.publish({
+        destination: `/app/game/multiplayer/${gameId}/abandon`,
+        body: JSON.stringify({ playerId }),
+      });
+    }
     sessionStorage.removeItem("isFirstPlayer");
     sessionStorage.removeItem("joinedAlready");
     navigate("/");
@@ -295,7 +308,14 @@ function RandomUserGame() {
         <div className="shot-history">
           <h3>Historial de Disparos</h3>
           <div className="history-list">
-            <div className="history-item" style={{ textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+            <div
+              className="history-item"
+              style={{
+                textAlign: "center",
+                color: "#64748b",
+                fontStyle: "italic",
+              }}
+            >
               No hay disparos aún...
             </div>
           </div>
@@ -312,21 +332,24 @@ function RandomUserGame() {
           {reversedHistory.map((shot, index) => {
             const isHit = shot.hit === "hit";
             const playerText = shot.player === "player" ? "Tú" : "Oponente";
-            const position = `${String.fromCharCode(65 + shot.col)}${shot.row + 1}`;
+            const position = `${String.fromCharCode(65 + shot.col)}${
+              shot.row + 1
+            }`;
             const originalIndex = shotHistory.length - index;
 
             return (
-              <div key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`} className="history-item">
-                <div style={{ fontWeight: '600', color: '#475569' }}>
+              <div
+                key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`}
+                className="history-item"
+              >
+                <div style={{ fontWeight: "600", color: "#475569" }}>
                   #{originalIndex} {playerText} → {position}
                 </div>
                 <span className={isHit ? "hit" : "miss"}>
                   {isHit ? "IMPACTO" : "AGUA"}
                 </span>
                 {shot.message && (
-                  <div className="shot-message">
-                    {shot.message}
-                  </div>
+                  <div className="shot-message">{shot.message}</div>
                 )}
               </div>
             );
@@ -374,7 +397,7 @@ const renderShipCounter = () => {
   return (
     <div className="game-container bots-setup-container">
       <h2>Modo Multijugador Aleatorio</h2>
-      
+
       <div className="player-info">
         <p>
           Jugando como:{" "}
@@ -383,13 +406,13 @@ const renderShipCounter = () => {
           </span>
         </p>
       </div>
-      
+
       <div className="game-status">
         <p className={gameOver ? (winner ? "win-status" : "lose-status") : ""}>
           {gameStatus}
         </p>
       </div>
-      
+
       {renderShipCounter()}
 
       <div className="boards-container">
@@ -407,7 +430,7 @@ const renderShipCounter = () => {
             />
           </div>
         </div>
-        
+
         <div className="board-section">
           <h3>Tablero del oponente</h3>
           <div className="board-wrapper">

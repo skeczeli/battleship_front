@@ -173,6 +173,11 @@ function BotsGame() {
       fetch(`http://localhost:8080/api/game/resume/${gameId}/${playerId}`)
         .then((res) => res.json())
         .then((data) => {
+          if (data.error !== undefined) {
+            setGameStatus(data.error);
+            navigate("/");
+            return;
+          }
           setPlayerBoard(mapBoardToNames(data.playerBoard));
           setOpponentBoard(data.botBoard);
           setSunkShips(data.sunkShips);
@@ -263,53 +268,63 @@ function BotsGame() {
     );
   };
 
-const renderShotHistory = () => {
-  if (!shotHistory || shotHistory.length === 0) {
+  const renderShotHistory = () => {
+    if (!shotHistory || shotHistory.length === 0) {
+      return (
+        <div className="shot-history">
+          <h3>Historial de Disparos</h3>
+          <div className="history-list">
+            <div
+              className="history-item"
+              style={{
+                textAlign: "center",
+                color: "#64748b",
+                fontStyle: "italic",
+              }}
+            >
+              No hay disparos aún...
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Mostrar los últimos disparos primero (orden inverso)
+    const reversedHistory = [...shotHistory].reverse();
+
     return (
       <div className="shot-history">
         <h3>Historial de Disparos</h3>
         <div className="history-list">
-          <div className="history-item" style={{ textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
-            No hay disparos aún...
-          </div>
+          {reversedHistory.map((shot, index) => {
+            const isHit = shot.hit === "hit";
+            const playerText = shot.player === "player" ? "Tú" : "Bot";
+            const position = `${String.fromCharCode(65 + shot.col)}${
+              shot.row + 1
+            }`;
+            const originalIndex = shotHistory.length - index; // Número de disparo original
+
+            return (
+              <div
+                key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`}
+                className="history-item"
+              >
+                <div style={{ fontWeight: "600", color: "#475569" }}>
+                  #{originalIndex} {playerText} → {position}
+                </div>
+                <span className={isHit ? "hit" : "miss"}>
+                  {isHit ? "IMPACTO" : "AGUA"}
+                </span>
+                {shot.message && (
+                  <div className="shot-message">{shot.message}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
-  }
-
-  // Mostrar los últimos disparos primero (orden inverso)
-  const reversedHistory = [...shotHistory].reverse();
-
-  return (
-    <div className="shot-history">
-      <h3>Historial de Disparos</h3>
-      <div className="history-list">
-        {reversedHistory.map((shot, index) => {
-          const isHit = shot.hit === "hit";
-          const playerText = shot.player === "player" ? "Tú" : "Bot";
-          const position = `${String.fromCharCode(65 + shot.col)}${shot.row + 1}`;
-          const originalIndex = shotHistory.length - index; // Número de disparo original
-
-          return (
-            <div key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`} className="history-item">
-              <div style={{ fontWeight: '600', color: '#475569' }}>
-                #{originalIndex} {playerText} → {position}
-              </div>
-              <span className={isHit ? "hit" : "miss"}>
-                {isHit ? "IMPACTO" : "AGUA"}
-              </span>
-              {shot.message && (
-                <div className="shot-message">
-                  {shot.message}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+  };
 
 const renderShipCounter = () => {
   // Obtener configuración del juego desde sessionStorage
@@ -398,9 +413,9 @@ const renderShipCounter = () => {
           </div>
         </div>
 
-          <div className="board-section history-section">
-            {renderShotHistory()}
-          </div>
+        <div className="board-section history-section">
+          {renderShotHistory()}
+        </div>
       </div>
 
       {renderLastShot()}

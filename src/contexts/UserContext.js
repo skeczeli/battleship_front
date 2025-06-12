@@ -52,6 +52,7 @@ export function UserProvider({ children }) {
     localStorage.removeItem("user");
     localStorage.removeItem(PLAYER_ID_KEY);
     sessionStorage.removeItem(PLAYER_ID_KEY);
+    sessionStorage.setItem("joinedAlready", "false");
 
     const newGuestId = generateGuestId();
     sessionStorage.setItem(PLAYER_ID_KEY, newGuestId);
