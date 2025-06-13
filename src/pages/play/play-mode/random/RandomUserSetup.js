@@ -55,6 +55,7 @@ function RandomUserSetup() {
   const navigate = useNavigate();
   const { user, playerId } = useUser();
   const [gameSize, setGameSize] = useState("normal");
+  const [matchByLevel, setMatchByLevel] = useState(false);
 
   const currentConfig = gameConfigs[gameSize];
 
@@ -70,19 +71,24 @@ function RandomUserSetup() {
 
   const handleConfirm = async (board, placedShips) => {
     if (placedShips.length < currentConfig.totalShips) {
-      alert(`Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`);
+      alert(
+        `Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`
+      );
       return;
     }
 
     const numericBoard = mapBoardToIntegers(board);
 
+    const matchByLevelString = matchByLevel ? "true" : "false";
+
     try {
       const waitingResponse = await fetch(
-        `http://localhost:8080/api/game/waiting?boardSize=${currentConfig.boardSize}`
+        `http://localhost:8080/api/game/waiting?boardSize=${currentConfig.boardSize}&matchByLevel=${matchByLevelString}&playerId=${playerId}`
       );
       const waitingData = await waitingResponse.json();
 
-      if (!waitingResponse.ok) throw new Error("Error al consultar la sala de espera");
+      if (!waitingResponse.ok)
+        throw new Error("Error al consultar la sala de espera");
 
       let gameId;
 
@@ -100,11 +106,18 @@ function RandomUserSetup() {
           },
         });
       } else {
-        const response = await fetch("http://localhost:8080/api/game/setup/multiplayer", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ board: numericBoard, playerId }),
-        });
+        const response = await fetch(
+          "http://localhost:8080/api/game/setup/multiplayer",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              board: numericBoard,
+              playerId,
+              matchByLevel: matchByLevelString,
+            }),
+          }
+        );
 
         if (!response.ok) throw new Error("No se pudo crear la sala");
 
@@ -133,34 +146,61 @@ function RandomUserSetup() {
       <div className="setup-header">
         <h2>Modo Multijugador Aleatorio</h2>
 
-        {/* Selector de tamaño del juego */}
-        <div className="game-size-selector">
-          <label className="size-label">Tamaño del juego</label>
-          <div className="size-options">
-            <div
-              className={`size-option ${gameSize === "small" ? "active" : ""}`}
-              onClick={() => setGameSize("small")}
-            >
-              <div className="size-icon">🎯</div>
-              <span>Pequeño</span>
-              <small>6x6</small>
+        {/* Contenedor de selectores alineados verticalmente */}
+        <div className="selectors-container">
+          {/* Selector de tamaño del juego */}
+          <div className="game-size-selector">
+            <label className="size-label">Tamaño del juego</label>
+            <div className="size-options">
+              <div
+                className={`size-option ${
+                  gameSize === "small" ? "active" : ""
+                }`}
+                onClick={() => setGameSize("small")}
+              >
+                <div className="size-icon">🎯</div>
+                <span>Pequeño</span>
+                <small>6x6</small>
+              </div>
+              <div
+                className={`size-option ${
+                  gameSize === "normal" ? "active" : ""
+                }`}
+                onClick={() => setGameSize("normal")}
+              >
+                <div className="size-icon">⚓</div>
+                <span>Normal</span>
+                <small>10x10</small>
+              </div>
+              <div
+                className={`size-option ${
+                  gameSize === "large" ? "active" : ""
+                }`}
+                onClick={() => setGameSize("large")}
+              >
+                <div className="size-icon">🚢</div>
+                <span>Grande</span>
+                <small>14x14</small>
+              </div>
             </div>
-            <div
-              className={`size-option ${gameSize === "normal" ? "active" : ""}`}
-              onClick={() => setGameSize("normal")}
+          </div>
+
+          {/* Botón para asignar oponente según nivel */}
+          <div className="level-matching-option">
+            <button
+              className={`level-match-btn ${matchByLevel ? "active" : ""}`}
+              onClick={() => setMatchByLevel(!matchByLevel)}
             >
-              <div className="size-icon">⚓</div>
-              <span>Normal</span>
-              <small>10x10</small>
-            </div>
-            <div
-              className={`size-option ${gameSize === "large" ? "active" : ""}`}
-              onClick={() => setGameSize("large")}
-            >
-              <div className="size-icon">🚢</div>
-              <span>Grande</span>
-              <small>14x14</small>
-            </div>
+              <span className="level-icon">{matchByLevel ? "🎯" : "🎲"}</span>
+              {matchByLevel
+                ? "Buscar oponente según nivel"
+                : "Oponente aleatorio"}
+            </button>
+            <small className="level-description">
+              {matchByLevel
+                ? "Te emparejará con jugadores de tu mismo nivel"
+                : "Te emparejará con cualquier jugador disponible"}
+            </small>
           </div>
         </div>
       </div>
