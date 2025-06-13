@@ -1,5 +1,3 @@
-// REEMPLAZAR RandomUserGame.js con esto:
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import SockJS from "sockjs-client";
@@ -29,14 +27,23 @@ function RandomUserGame() {
   });
 
   const [sunkShips, setSunkShips] = useState({ player: [], opponent: [] });
-  const [shotHistory, setShotHistory] = useState([]); // ← Agregar historial
-  const [lastShot, setLastShot] = useState(null); // ← Agregar último disparo
+  const [shotHistory, setShotHistory] = useState([]);
+  const [lastShot, setLastShot] = useState(null);
   const [gameStatus, setGameStatus] = useState("Cargando partida...");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState(null);
   const [gameConfig, setGameConfig] = useState(null);
+
+  // Estados para el chat
+  const [activeTab, setActiveTab] = useState("history"); // "history" o "chat"
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [opponentName, setOpponentName] = useState("Oponente");
+  
+  const chatInputRef = useRef(null);
+  const chatListRef = useRef(null);
 
   const { playerBoard: initialBoard } = location.state || {};
   const [initialBoardState, setInitialBoardState] = useState(initialBoard);
@@ -76,7 +83,6 @@ function RandomUserGame() {
         case "SHOT_RESULT":
           const isOwn = data.playerId === playerId;
 
-          // Agregar al historial
           const shotData = {
             row: data.row,
             col: data.col,
@@ -135,6 +141,24 @@ function RandomUserGame() {
             );
           }
           break;
+        case "CHAT_MESSAGE":
+          // Nuevo: manejar mensajes de chat
+          const chatMessage = {
+            id: Date.now() + Math.random(),
+            text: data.message,
+            sender: data.senderId === playerId ? "me" : "opponent",
+            senderName: data.senderId === playerId ? (user?.username || "Tú") : opponentName,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setChatMessages(prev => [...prev, chatMessage]);
+          
+          // Auto-scroll al final del chat
+          setTimeout(() => {
+            if (chatListRef.current) {
+              chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+            }
+          }, 100);
+          break;
         case "GAME_ABANDONED":
           setGameStatus("El oponente abandonó la partida");
           setGameOver(true);
@@ -149,7 +173,7 @@ function RandomUserGame() {
           break;
       }
     },
-    [playerId]
+    [playerId, user, opponentName]
   );
 
   useEffect(() => {
@@ -198,8 +222,9 @@ function RandomUserGame() {
             setPlayerBoard(mapBoardToNames(data.playerBoard));
             setOpponentBoard(data.opponentBoard);
             setSunkShips(data.sunkShips);
-            setShotHistory(data.shotHistory || []); // ← Restaurar historial
-            setLastShot(data.lastShot || null); // ← Restaurar último disparo
+            setShotHistory(data.shotHistory || []);
+            setLastShot(data.lastShot || null);
+            setChatMessages(data.chatMessages || []); // ← Restaurar mensajes de chat
             setGameOver(data.gameOver);
             setWinner(data.winner === playerId);
             setIsPlayerTurn(data.turn === playerId && !data.gameOver);
@@ -279,12 +304,31 @@ function RandomUserGame() {
         body: JSON.stringify({ playerId }),
       });
     }
+    
+    // ⭐ NO desconectar WebSocket para mantener el chat activo
+    // Solo limpiar session storage y navegar
     sessionStorage.removeItem("isFirstPlayer");
     sessionStorage.removeItem("joinedAlready");
     navigate("/");
   };
 
-  // ← Función para renderizar último disparo (igual que en BotsGame)
+  // Función para enviar mensajes de chat
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !stompClient.current) return;
+
+    stompClient.current.publish({
+      destination: `/app/game/multiplayer/${gameId}/chat`,
+      body: JSON.stringify({
+        senderId: playerId,
+        message: newMessage.trim(),
+        gameId: gameId
+      }),
+    });
+
+    setNewMessage("");
+  };
+
   const renderLastShot = () => {
     if (!lastShot) return null;
 
@@ -306,23 +350,19 @@ function RandomUserGame() {
     );
   };
 
-  // ← Función para renderizar historial (igual que en BotsGame)
   const renderShotHistory = () => {
     if (!shotHistory || shotHistory.length === 0) {
       return (
-        <div className="shot-history">
-          <h3>Historial de Disparos</h3>
-          <div className="history-list">
-            <div
-              className="history-item"
-              style={{
-                textAlign: "center",
-                color: "#64748b",
-                fontStyle: "italic",
-              }}
-            >
-              No hay disparos aún...
-            </div>
+        <div className="history-content">
+          <div
+            className="history-item"
+            style={{
+              textAlign: "center",
+              color: "#64748b",
+              fontStyle: "italic",
+            }}
+          >
+            No hay disparos aún...
           </div>
         </div>
       );
@@ -331,42 +371,120 @@ function RandomUserGame() {
     const reversedHistory = [...shotHistory].reverse();
 
     return (
-      <div className="shot-history">
-        <h3>Historial de Disparos</h3>
-        <div className="history-list">
-          {reversedHistory.map((shot, index) => {
-            const isHit = shot.hit === "hit";
-            const playerText = shot.player === "player" ? "Tú" : "Oponente";
-            const position = `${String.fromCharCode(65 + shot.col)}${
-              shot.row + 1
-            }`;
-            const originalIndex = shotHistory.length - index;
+      <div className="history-content">
+        {reversedHistory.map((shot, index) => {
+          const isHit = shot.hit === "hit";
+          const playerText = shot.player === "player" ? "Tú" : "Oponente";
+          const position = `${String.fromCharCode(65 + shot.col)}${
+            shot.row + 1
+          }`;
+          const originalIndex = shotHistory.length - index;
 
-            return (
-              <div
-                key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`}
-                className="history-item"
-              >
-                <div style={{ fontWeight: "600", color: "#475569" }}>
-                  #{originalIndex} {playerText} → {position}
-                </div>
-                <span className={isHit ? "hit" : "miss"}>
-                  {isHit ? "IMPACTO" : "AGUA"}
-                </span>
-                {shot.message && (
-                  <div className="shot-message">{shot.message}</div>
-                )}
+          return (
+            <div
+              key={`${shot.row}-${shot.col}-${shot.player}-${originalIndex}`}
+              className="history-item"
+            >
+              <div style={{ fontWeight: "600", color: "#475569" }}>
+                #{originalIndex} {playerText} → {position}
               </div>
-            );
-          })}
+              <span className={isHit ? "hit" : "miss"}>
+                {isHit ? "IMPACTO" : "AGUA"}
+              </span>
+              {shot.message && (
+                <div className="shot-message">{shot.message}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Nueva función para renderizar el chat
+  const renderChat = () => {
+    return (
+      <div className="chat-content">
+        <div className="chat-messages" ref={chatListRef}>
+          {chatMessages.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                color: "#64748b",
+                fontStyle: "italic",
+                padding: "20px"
+              }}
+            >
+              No hay mensajes aún...
+            </div>
+          ) : (
+            chatMessages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`chat-message ${msg.sender === "me" ? "my-message" : "opponent-message"}`}
+              >
+                <div className="message-header">
+                  <span className="sender-name">{msg.senderName}</span>
+                  <span className="message-time">{msg.timestamp}</span>
+                </div>
+                <div className="message-text">{msg.text}</div>
+              </div>
+            ))
+          )}
+        </div>
+        
+        <form onSubmit={handleSendMessage} className="chat-input-form">
+          <input
+            ref={chatInputRef}
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Escribe un mensaje..."
+            className="chat-input"
+            maxLength={200}
+          />
+          <button
+            type="submit"
+            className="chat-send-button"
+            disabled={!newMessage.trim()}
+          >
+            Enviar
+          </button>
+        </form>
+      </div>
+    );
+  };
+
+  // Nueva función para renderizar el panel con pestañas
+  const renderHistoryAndChat = () => {
+    return (
+      <div className="history-and-chat-panel">
+        {/* Pestañas */}
+        <div className="panel-tabs">
+          <button
+            className={`tab-button ${activeTab === "history" ? "active" : ""}`}
+            onClick={() => setActiveTab("history")}
+          >
+            📊 Historial
+          </button>
+          <button
+            className={`tab-button ${activeTab === "chat" ? "active" : ""}`}
+            onClick={() => setActiveTab("chat")}
+          >
+            💬 Chat
+          </button>
+        </div>
+
+        {/* Contenido */}
+        <div className="panel-content">
+          {activeTab === "history" ? renderShotHistory() : renderChat()}
         </div>
       </div>
     );
   };
 
 const renderShipCounter = () => {
-  // Obtener configuración del juego desde sessionStorage
-  if (!gameConfig) return null; // aún cargando
+  if (!gameConfig) return null;
   const totalShips = gameConfig.totalShips;
   
   return (
@@ -431,7 +549,7 @@ const renderShipCounter = () => {
               onCellClick={() => {}}
               sunkShips={sunkShips.player}
               isGameMode={true}
-              className="player-board" // ← Agregar className
+              className="player-board"
             />
           </div>
         </div>
@@ -447,18 +565,17 @@ const renderShipCounter = () => {
               isPlayerTurn={isPlayerTurn}
               sunkShips={sunkShips.opponent}
               isGameMode={true}
-              className="opponent-board" // ← Agregar className
+              className="opponent-board"
             />
           </div>
         </div>
 
-        {/* ← Agregar historial */}
+        {/* Panel combinado de historial y chat */}
         <div className="board-section history-section">
-          {renderShotHistory()}
+          {renderHistoryAndChat()}
         </div>
       </div>
 
-      {/* ← Agregar último disparo */}
       {renderLastShot()}
 
       {gameOver ? (
