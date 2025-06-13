@@ -15,6 +15,7 @@ function ShipList({
   // Mapa de colores para cada tipo de barco
   const shipColors = {
     portaaviones: "#ec4899", // Rosa - primer portaaviones
+    superportaaviones: "#b45309", // Naranja oscuro - segundo portaaviones
     acorazado: "#a855f7",    // Violeta
     submarino: "#06b6d4",    // Celeste
     destructor: "#10b981",   // Verde
@@ -23,13 +24,8 @@ function ShipList({
   };
 
   const getShipColor = (ship) => {
-    // Extraer el tipo del ID (ej: "portaaviones-0" -> "portaaviones")
+    // Extraer el tipo del ID (ej: "superportaaviones-0" -> "superportaaviones")
     const shipType = ship.type || ship.id.split('-')[0];
-    
-    // Color especial para el segundo portaaviones (Superportaaviones)
-    if (ship.id === "portaaviones-1") {
-      return "#f59e0b"; // Dorado para Superportaaviones
-    }
     
     return shipColors[shipType] || "#6b7280"; // Gris por defecto
   };
