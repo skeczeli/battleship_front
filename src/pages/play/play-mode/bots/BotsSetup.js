@@ -46,7 +46,8 @@ function BotsSetup() {
     large: {
       boardSize: 14,
       ships: [
-        { type: "portaaviones", size: 5, count: 2 },
+        { type: "portaaviones", size: 5, count: 1 },
+        { type: "superportaaviones", size: 6, count: 1 },
         { type: "acorazado", size: 4, count: 1 },
         { type: "submarino", size: 3, count: 1 },
         { type: "destructor", size: 3, count: 1 },
@@ -65,7 +66,8 @@ function BotsSetup() {
     submarino: 3,
     destructor: 4,
     lancha: 5,
-    fragata: 6
+    fragata: 6,
+    superportaaviones: 7
   };
 
   const mapBoardToIntegers = (board) => {
@@ -77,7 +79,7 @@ function BotsSetup() {
       })
     );
   };
-  
+
   const handleConfirm = async (board, placedShips) => {
     if (placedShips.length < currentConfig.totalShips) {
       alert(`Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`);

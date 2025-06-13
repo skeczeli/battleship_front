@@ -441,6 +441,7 @@ const renderShipCounter = () => {
           <div className="board-wrapper">
             <GameBoard
               board={opponentBoard}
+              boardSize={gameConfig.boardSize}
               isPlayerBoard={false}
               onCellClick={handleCellClick}
               isPlayerTurn={isPlayerTurn}
