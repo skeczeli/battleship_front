@@ -17,43 +17,47 @@ const defaultShips = [
 /**
  * Componente principal del setup de Battleship.
  */
-function Setup({ 
-  onConfirm, 
-  buttonText = "Confirmar", 
+function Setup({
+  requirePasskey = false,
+  passkey = "",
+  onConfirm,
+  buttonText = "Confirmar",
   showJoinOption = false,
   gameConfig, // NUEVA PROP
-  boardSize = 10 // NUEVA PROP
+  boardSize = 10, // NUEVA PROP
 }) {
   // Estado para el input del gameId (solo para multiplayer)
   const [gameIdInput, setGameIdInput] = useState("");
 
   // Usar barcos desde gameConfig o usar los por defecto
-  const ships = gameConfig?.ships ? 
-    gameConfig.ships.flatMap(ship => 
-      Array.from({ length: ship.count }, (_, i) => {
-        let name = ship.type.charAt(0).toUpperCase() + ship.type.slice(1);
-        
-        // Para múltiples barcos del mismo tipo, agregar numeración
-        if (ship.count > 1) {
-          if (ship.type === 'portaaviones') {
-            name = i === 0 ? 'Portaaviones' : 'Superportaaviones';
-          } else {
-            name = `${name} ${i + 1}`;
+  const ships = gameConfig?.ships
+    ? gameConfig.ships.flatMap((ship) =>
+        Array.from({ length: ship.count }, (_, i) => {
+          let name = ship.type.charAt(0).toUpperCase() + ship.type.slice(1);
+
+          // Para múltiples barcos del mismo tipo, agregar numeración
+          if (ship.count > 1) {
+            if (ship.type === "portaaviones") {
+              name = i === 0 ? "Portaaviones" : "Superportaaviones";
+            } else {
+              name = `${name} ${i + 1}`;
+            }
           }
-        }
-        
-        return {
-          id: `${ship.type}-${i}`,
-          name: name,
-          size: ship.size,
-          type: ship.type
-        };
-      })
-    ) : defaultShips;
+
+          return {
+            id: `${ship.type}-${i}`,
+            name: name,
+            size: ship.size,
+            type: ship.type,
+          };
+        })
+      )
+    : defaultShips;
 
   // Cargar datos guardados - pero solo si el tamaño coincide
   const savedState = JSON.parse(localStorage.getItem("setupState") || "{}");
-  const canUseSavedState = savedState.board && savedState.board.length === boardSize;
+  const canUseSavedState =
+    savedState.board && savedState.board.length === boardSize;
 
   // Inicializar el hook con los datos guardados (solo si son compatibles)
   const {
@@ -72,7 +76,7 @@ function Setup({
     resetBoard,
     canPlaceAtCurrentPosition,
   } = useBoard(
-    canUseSavedState ? savedState.board : null, 
+    canUseSavedState ? savedState.board : null,
     canUseSavedState ? savedState.placedShips : [],
     boardSize // PASAR EL TAMAÑO DEL TABLERO
   );
@@ -94,7 +98,7 @@ function Setup({
       board,
       placedShips,
       orientation,
-      boardSize // Guardar también el tamaño
+      boardSize, // Guardar también el tamaño
     };
     localStorage.setItem("setupState", JSON.stringify(data));
   }, [board, placedShips, orientation, boardSize]);
@@ -117,7 +121,7 @@ function Setup({
             {orientation === "horizontal" ? "Horizontal" : "Vertical"}
           </button>
           <button onClick={resetBoard}>Reiniciar</button>
-          
+
           {/* Input para unirse a partida (solo en multiplayer) */}
           {showJoinOption && (
             <div className="join-game-input">
@@ -132,12 +136,13 @@ function Setup({
               />
             </div>
           )}
-          
+
           <button
             onClick={handleConfirm}
             disabled={
-              placedShips.length < totalShips || 
-              (showJoinOption && gameIdInput.trim() === "")
+              placedShips.length < totalShips ||
+              (showJoinOption && gameIdInput.trim() === "") ||
+              (requirePasskey && (!passkey || passkey.trim() === ""))
             }
             title={
               placedShips.length < totalShips
@@ -155,10 +160,12 @@ function Setup({
 
       <div className="board-container">
         <h3>Coloca tus barcos</h3>
-        <div 
-          className="board-wrapper" 
+        <div
+          className="board-wrapper"
           onMouseLeave={handleBoardLeave}
-          data-size={boardSize <= 6 ? "small" : boardSize >= 14 ? "large" : "normal"}
+          data-size={
+            boardSize <= 6 ? "small" : boardSize >= 14 ? "large" : "normal"
+          }
         >
           <Board
             board={board}
