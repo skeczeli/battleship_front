@@ -14,7 +14,7 @@ const shipMap = {
   destructor: 4,
   lancha: 5,
   fragata: 6,
-  superportaaviones: 7
+  superportaaviones: 7,
 };
 
 const gameConfigs = {

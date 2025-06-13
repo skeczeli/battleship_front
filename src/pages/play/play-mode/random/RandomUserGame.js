@@ -40,8 +40,8 @@ function RandomUserGame() {
   const [activeTab, setActiveTab] = useState("history"); // "history" o "chat"
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [opponentName, setOpponentName] = useState("Oponente");
-  
+  const [opponentName] = useState("Oponente");
+
   const chatInputRef = useRef(null);
   const chatListRef = useRef(null);
 
@@ -59,7 +59,7 @@ function RandomUserGame() {
       4: "destructor",
       5: "lancha",
       6: "fragata",
-      7: "superportaaviones"
+      7: "superportaaviones",
     };
     return board.map((row) =>
       row.map((cell) => {
@@ -147,11 +147,17 @@ function RandomUserGame() {
             id: Date.now() + Math.random(),
             text: data.message,
             sender: data.senderId === playerId ? "me" : "opponent",
-            senderName: data.senderId === playerId ? (user?.username || "Tú") : opponentName,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            senderName:
+              data.senderId === playerId
+                ? user?.username || "Tú"
+                : opponentName,
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           };
-          setChatMessages(prev => [...prev, chatMessage]);
-          
+          setChatMessages((prev) => [...prev, chatMessage]);
+
           // Auto-scroll al final del chat
           setTimeout(() => {
             if (chatListRef.current) {
@@ -246,7 +252,9 @@ function RandomUserGame() {
           });
       };
 
-      const savedConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "null");
+      const savedConfig = JSON.parse(
+        sessionStorage.getItem("gameConfig") || "null"
+      );
       setGameConfig(savedConfig);
       const joinedAlready = sessionStorage.getItem("joinedAlready") === "true";
 
@@ -304,7 +312,7 @@ function RandomUserGame() {
         body: JSON.stringify({ playerId }),
       });
     }
-    
+
     // ⭐ NO desconectar WebSocket para mantener el chat activo
     // Solo limpiar session storage y navegar
     sessionStorage.removeItem("isFirstPlayer");
@@ -322,7 +330,6 @@ function RandomUserGame() {
       body: JSON.stringify({
         senderId: playerId,
         message: newMessage.trim(),
-        gameId: gameId
       }),
     });
 
@@ -412,7 +419,7 @@ function RandomUserGame() {
                 textAlign: "center",
                 color: "#64748b",
                 fontStyle: "italic",
-                padding: "20px"
+                padding: "20px",
               }}
             >
               No hay mensajes aún...
@@ -421,7 +428,9 @@ function RandomUserGame() {
             chatMessages.map((msg) => (
               <div
                 key={msg.id}
-                className={`chat-message ${msg.sender === "me" ? "my-message" : "opponent-message"}`}
+                className={`chat-message ${
+                  msg.sender === "me" ? "my-message" : "opponent-message"
+                }`}
               >
                 <div className="message-header">
                   <span className="sender-name">{msg.senderName}</span>
@@ -432,7 +441,7 @@ function RandomUserGame() {
             ))
           )}
         </div>
-        
+
         <form onSubmit={handleSendMessage} className="chat-input-form">
           <input
             ref={chatInputRef}
@@ -483,31 +492,31 @@ function RandomUserGame() {
     );
   };
 
-const renderShipCounter = () => {
-  if (!gameConfig) return null;
-  const totalShips = gameConfig.totalShips;
-  
-  return (
-    <div className="ship-counter">
-      <div className="player-counter">
-        <p>
-          Tus barcos hundidos:{" "}
-          <span className="counter">
-            {sunkShips.player.length}/{totalShips}
-          </span>
-        </p>
+  const renderShipCounter = () => {
+    if (!gameConfig) return null;
+    const totalShips = gameConfig.totalShips;
+
+    return (
+      <div className="ship-counter">
+        <div className="player-counter">
+          <p>
+            Tus barcos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.player.length}/{totalShips}
+            </span>
+          </p>
+        </div>
+        <div className="opponent-counter">
+          <p>
+            Barcos enemigos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.opponent.length}/{totalShips}
+            </span>
+          </p>
+        </div>
       </div>
-      <div className="opponent-counter">
-        <p>
-          Barcos enemigos hundidos:{" "}
-          <span className="counter">
-            {sunkShips.opponent.length}/{totalShips}
-          </span>
-        </p>
-      </div>
-    </div>
-  );
-};
+    );
+  };
 
   if (!playerBoard || !opponentBoard || !gameStarted || !gameConfig) {
     return (
