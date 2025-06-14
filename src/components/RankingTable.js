@@ -35,96 +35,93 @@ const RankingTable = () => {
   }, []);
 
   return (
-    <div className="ranking-container">
-      <h1 className="ranking-title">Tabla de Ranking</h1>
+    // QUITAR el div ranking-container y el h1 título
+    <>
+      <div className="table-container">
+        <table className="ranking-table">
+          <thead>
+            <tr>
+              <th>Posición</th>
+              <th>Jugador</th>
+              <th>Puntos</th>
+              <th>Categoría</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.map((player) => {
+              const category = getCategoryInfo(player.score);
+              return (
+                <tr key={player.rank}>
+                  <td>
+                    <div
+                      className={`rank-badge ${
+                        player.rank <= 3 ? "top-rank" : ""
+                      }`}
+                    >
+                      {player.rank}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="player-name">
+                      <Link to={`/profile/${player.username}`}>
+                        {player.username}
+                      </Link>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="player-score">{player.score}</div>
+                  </td>
+                  <td>
+                    <div
+                      className={`category-badge category-${category.name.toLowerCase()}`}
+                    >
+                      {category.name}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      <div className="ranking-card">
-        <div className="table-container">
-          <table className="ranking-table">
-            <thead>
-              <tr>
-                <th>Posición</th>
-                <th>Jugador</th>
-                <th>Puntos</th>
-                <th>Categoría</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((player) => {
-                const category = getCategoryInfo(player.score);
-                return (
-                  <tr key={player.rank}>
-                    <td>
-                      <div
-                        className={`rank-badge ${
-                          player.rank <= 3 ? "top-rank" : ""
-                        }`}
-                      >
-                        {player.rank}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="player-name">
-                        <Link to={`/profile/${player.username}`}>
-                          {player.username}
-                        </Link>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="player-score">{player.score}</div>
-                    </td>
-                    <td>
-                      <div
-                        className={`category-badge category-${category.name.toLowerCase()}`}
-                      >
-                        {category.name}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="pagination">
+        <div className="pagination-info">
+          Mostrando {indexOfFirstItem + 1} a{" "}
+          {Math.min(indexOfLastItem, rankingData.length)} de{" "}
+          {rankingData.length} resultados
         </div>
-
-        <div className="pagination">
-          <div className="pagination-info">
-            Mostrando {indexOfFirstItem + 1} a{" "}
-            {Math.min(indexOfLastItem, rankingData.length)} de{" "}
-            {rankingData.length} resultados
-          </div>
-          <div className="pagination-controls">
+        <div className="pagination-controls">
+          <button
+            className="pagination-button"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </button>
+          {[...Array(totalPages)].map((_, index) => (
             <button
-              className="pagination-button"
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              key={index + 1}
+              className={`pagination-button ${
+                currentPage === index + 1 ? "active" : ""
+              }`}
+              onClick={() => setCurrentPage(index + 1)}
             >
-              Anterior
+              {index + 1}
             </button>
-            {[...Array(totalPages)].map((_, index) => (
-              <button
-                key={index + 1}
-                className={`pagination-button ${
-                  currentPage === index + 1 ? "active" : ""
-                }`}
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </button>
-            ))}
-            <button
-              className="pagination-button"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Siguiente
-            </button>
-          </div>
+          ))}
+          <button
+            className="pagination-button"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Siguiente
+          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

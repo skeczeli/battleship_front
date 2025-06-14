@@ -2,23 +2,42 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "styles/register.css";
 
-const ProfilePage = () => {
+const Profile = () => {
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState("");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) setCurrentUser(storedUser);
 
-    // Obtener datos del perfil
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/users/${username}`);
+        const token = localStorage.getItem("token");
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        
+        // Incluir token si existe para obtener información de seguimiento
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const res = await fetch(`http://localhost:8080/api/users/${username}`, {
+          headers
+        });
+        
         if (!res.ok) throw new Error("No se pudo cargar el perfil");
         const data = await res.json();
         setProfile(data);
+        
+        // El backend ya nos dice si seguimos a este usuario
+        if (data.isFollowing !== null) {
+          setIsFollowing(data.isFollowing);
+        }
       } catch (err) {
         setError("Error al cargar el perfil");
       }
@@ -28,12 +47,71 @@ const ProfilePage = () => {
   }, [username]);
 
   const handleFollow = async () => {
-    // lógica para seguir usuario
     if (!currentUser) {
       alert("Inicia sesión para seguir a otros usuarios.");
       return;
     }
-    alert("Funcionalidad aún no implementada.");
+
+    const token = localStorage.getItem("token");
+    console.log("Token encontrado:", token); // Debug
+    
+    if (!token) {
+      console.error("No hay token en localStorage"); // Debug
+      alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const endpoint = isFollowing ? "unfollow" : "follow";
+      console.log("Enviando petición a:", `http://localhost:8080/api/follow/${endpoint}`); // Debug
+      console.log("Con token:", `Bearer ${token}`); // Debug
+      console.log("Para usuario:", username); // Debug
+      
+      const res = await fetch(`http://localhost:8080/api/follow/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          usernameToFollow: username,
+        }),
+      });
+
+      console.log("Respuesta status:", res.status); // Debug
+      console.log("Respuesta ok:", res.ok); // Debug
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error("Error del servidor:", errorData); // Debug
+        alert("Error: " + errorData);
+        return;
+      }
+
+      const responseText = await res.text();
+      console.log("Respuesta exitosa:", responseText); // Debug
+
+      // Actualizar estado local
+      setIsFollowing(!isFollowing);
+      
+      // Actualizar contador en el perfil
+      if (profile) {
+        setProfile(prev => ({
+          ...prev,
+          followersCount: isFollowing 
+            ? prev.followersCount - 1 
+            : prev.followersCount + 1
+        }));
+      }
+
+    } catch (error) {
+      console.error("Error al procesar seguimiento:", error);
+      alert("Error de conexión: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -61,19 +139,34 @@ const ProfilePage = () => {
       }
 
       alert("Cuenta eliminada correctamente.");
-      localStorage.removeItem("user"); // 🔓 cerrás sesión
-      window.location.href = "/"; // 🏠 redirige al home
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      window.location.href = "/";
     } catch (error) {
       alert("Error al conectar con el servidor.");
       console.error(error);
     }
   };
 
-  if (error) return <p>{error}</p>;
-  if (!profile) return <p>Cargando perfil...</p>;
+  if (error) return (
+    <div className="profile-container">
+      <div className="error-state">
+        <span className="error-icon">⚠️</span>
+        <p>{error}</p>
+      </div>
+    </div>
+  );
+  
+  if (!profile) return (
+    <div className="profile-container">
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Cargando perfil...</p>
+      </div>
+    </div>
+  );
 
-  const isCurrentUser =
-    currentUser && currentUser.username === profile.username;
+  const isCurrentUser = currentUser && currentUser.username === profile.username;
   const totalGames = profile.wins + profile.losses;
 
   return (
@@ -95,6 +188,18 @@ const ProfilePage = () => {
         <strong>Total jugadas:</strong> {totalGames}
       </p>
 
+      {/* Mostrar estadísticas de seguimiento si están disponibles */}
+      {profile.followersCount !== undefined && (
+        <>
+          <p>
+            <strong>Seguidores:</strong> {profile.followersCount}
+          </p>
+          <p>
+            <strong>Siguiendo:</strong> {profile.followingCount}
+          </p>
+        </>
+      )}
+
       {isCurrentUser ? (
         <>
           <button
@@ -108,10 +213,16 @@ const ProfilePage = () => {
           </button>
         </>
       ) : (
-        <button onClick={handleFollow}>Seguir</button>
+        <button 
+          className={`${isFollowing ? "following-button" : "follow-button"} ${isLoading ? "loading" : ""}`}
+          onClick={handleFollow}
+          disabled={isLoading}
+        >
+          {isLoading ? "..." : (isFollowing ? "Siguiendo" : "Seguir")}
+        </button>
       )}
     </div>
   );
 };
 
-export default ProfilePage;
+export default Profile;

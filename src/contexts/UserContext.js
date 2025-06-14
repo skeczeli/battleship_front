@@ -41,8 +41,15 @@ export function UserProvider({ children }) {
     console.log(getStoredPlayerId(parsedUser));
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, token) => {
+    console.log("UserContext login llamado con:", userData, token); // Debug
     localStorage.setItem("user", JSON.stringify(userData));
+    if (token) {
+      localStorage.setItem("token", token);
+      console.log("Token guardado:", token); // Debug
+    } else {
+      console.error("No se recibió token en login"); // Debug
+    }
     localStorage.setItem(PLAYER_ID_KEY, `${userData.username}`);
     setUser(userData);
     setPlayerId(`${userData.username}`);
@@ -50,6 +57,7 @@ export function UserProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token"); // Eliminar el token
     localStorage.removeItem(PLAYER_ID_KEY);
     sessionStorage.removeItem(PLAYER_ID_KEY);
     sessionStorage.setItem("joinedAlready", "false");

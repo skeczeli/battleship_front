@@ -50,9 +50,17 @@ function Login() {
           return;
         }
 
-        const fullUser = { ...user, token };
-        login(fullUser);
+        console.log("Token extraído:", token); // Debug
+        console.log("Usuario:", user); // Debug
+
+        // Pasar user y token por separado al login
+        login(user, token);
         setPlayerId(user.username, false);
+
+        // Verificar que se guardó correctamente
+        setTimeout(() => {
+          console.log("Token en localStorage:", localStorage.getItem("token"));
+        }, 100);
 
         navigate("/");
       } else {
