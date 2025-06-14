@@ -11,7 +11,7 @@ import RandomUserSetup from "./pages/play/play-mode/random/RandomUserSetup";
 import RandomUserGame from "./pages/play/play-mode/random/RandomUserGame";
 import PrivateRoomSetup from "./pages/play/play-mode/private/PrivateRoomSetup";
 import PrivateRoomGame from "./pages/play/play-mode/private/PrivateRoomGame";
-import Ranking from "./pages/Ranking";
+import Ranking from "./pages/ranking/Ranking";
 import Navbar from "./components/Navbar";
 import ProfileEditor from "./pages/ProfileEditor";
 import Profile from "./pages/Profile";

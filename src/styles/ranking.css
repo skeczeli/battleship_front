@@ -370,3 +370,87 @@
     font-size: 0.75rem;
   }
 }
+/* Fila del usuario actual */
+.current-user-row {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  border: 2px solid #0ea5e9 !important;
+}
+
+.current-user-row:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+}
+
+/* Badge "Tú" en la posición */
+.you-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #0ea5e9;
+  color: white;
+  font-size: 0.6rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.rank-badge {
+  position: relative;
+}
+
+/* Texto "Tú" en el nombre */
+.you-text {
+  color: #0ea5e9;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Columnas adicionales para estadísticas */
+.player-wins,
+.player-losses {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.player-wins {
+  color: #059669;
+}
+
+.player-losses {
+  color: #dc2626;
+}
+
+/* Estado de carga para ranking de amigos */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-state .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+/* Responsive para columnas adicionales */
+@media (max-width: 768px) {
+  .ranking-table th:nth-child(5),
+  .ranking-table th:nth-child(6),
+  .ranking-table td:nth-child(5),
+  .ranking-table td:nth-child(6) {
+    display: none;
+  }
+  
+  .you-badge {
+    font-size: 0.5rem;
+    padding: 1px 3px;
+  }
+}

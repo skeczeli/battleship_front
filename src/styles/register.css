@@ -42,7 +42,7 @@
 }
 
 h1 {
-  margin-top: 100px; /* Ajusta el margen superior del título */
+  margin-top: 100px;
 }
 
 .form-container button:hover {
@@ -62,14 +62,11 @@ h1 {
   transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-
-/* mueve los botones */
 .button:hover {
   background-color: #0056b3;
   transform: translateY(-2px);
 }
 
-/* Añadir color y espacio a los textos */
 button {
   font-weight: bold;
 }
@@ -154,221 +151,6 @@ form p a:hover {
   background-color: #c62828;
 }
 
-/* Botón de seguir mejorado pero coherente */
-.follow-button {
-  background-color: #007bff;
-  color: white;
-  padding: 14px 28px;
-  margin: 15px 5px;
-  margin-left: 0px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 12px rgba(0, 123, 255, 0.25);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Efecto sutil de brillo */
-.follow-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.6s ease;
-}
-
-.follow-button:hover::before {
-  left: 100%;
-}
-
-.follow-button:hover {
-  background-color: #0056b3;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 123, 255, 0.35);
-}
-
-.follow-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
-}
-
-/* Botón cuando ya estás siguiendo - SIN CAMBIO A ROJO */
-.following-button {
-  background-color: #28a745;
-  color: white;
-  padding: 14px 28px;
-  margin: 15px 5px;
-  margin-left: 0px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 12px rgba(40, 167, 69, 0.25);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.following-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.6s ease;
-}
-
-.following-button:hover::before {
-  left: 100%;
-}
-
-.following-button:hover {
-  background-color: #218838; /* Verde más oscuro, NO rojo */
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
-}
-
-.following-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
-}
-
-/* Añadir un icono sutil con CSS */
-.follow-button::after {
-  content: '👤';
-  margin-left: 8px;
-  font-size: 14px;
-}
-
-.following-button::after {
-  content: '✓';
-  margin-left: 8px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-/* Estados de carga y error mejorados */
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.loading-state p,
-.error-state p {
-  margin-top: 15px;
-  font-size: 1.1rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* Spinner animado */
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Estado de error */
-.error-state {
-  color: #dc3545;
-}
-
-.error-icon {
-  font-size: 2rem;
-  margin-bottom: 10px;
-}
-
-.error-state p {
-  color: #dc3545;
-  font-weight: 600;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .follow-button,
-  .following-button {
-    width: 100%;
-    margin: 15px 0;
-    padding: 12px 24px;
-  }
-}
-
-/* Estados de carga y error mejorados */
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.loading-state p,
-.error-state p {
-  margin-top: 15px;
-  font-size: 1.1rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* Spinner animado */
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Estado de error */
-.error-state {
-  color: #dc3545;
-}
-
-.error-icon {
-  font-size: 2rem;
-  margin-bottom: 10px;
-}
-
-.error-state p {
-  color: #dc3545;
-  font-weight: 600;
-}
-
 /* Botón de seguir */
 .follow-button {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
@@ -390,7 +172,7 @@ form p a:hover {
   box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
-/* Botón de siguiendo */
+/* Botón de siguiendo - SIN texto adicional en hover */
 .following-button {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -406,12 +188,9 @@ form p a:hover {
 }
 
 .following-button:hover {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-}
-
-.following-button:hover::after {
-  content: " - Dejar de seguir";
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Estado de carga */
@@ -444,6 +223,11 @@ form p a:hover {
   margin-bottom: 1rem;
 }
 
+.error-state p {
+  color: #dc3545;
+  font-weight: 600;
+}
+
 /* Estado de carga para perfil */
 .loading-state {
   display: flex;
@@ -452,6 +236,13 @@ form p a:hover {
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
+}
+
+.loading-state p {
+  margin-top: 15px;
+  font-size: 1.1rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .spinner {
@@ -467,4 +258,14 @@ form p a:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .follow-button,
+  .following-button {
+    width: 100%;
+    margin: 15px 0;
+    padding: 12px 24px;
+  }
 }

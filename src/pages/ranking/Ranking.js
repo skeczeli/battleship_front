@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import RankingTable from "components/RankingTable";
+import FriendsRanking from "./FriendsRanking";
 import "styles/ranking.css";
 
 const Ranking = () => {
@@ -29,16 +30,9 @@ const Ranking = () => {
       {/* 3. CONTENIDO TERCERO */}
       <div className="ranking-content">
         {activeTab === "global" ? (
-          // Solo renderizar RankingTable sin wrapper extra
           <RankingTable />
         ) : (
-          <div className="ranking-card">
-            <div className="empty-state">
-              <span className="empty-icon">👥</span>
-              <h3>Próximamente</h3>
-              <p>El ranking de amigos estará disponible pronto</p>
-            </div>
-          </div>
+          <FriendsRanking />
         )}
       </div>
     </div>
