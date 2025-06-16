@@ -35,7 +35,7 @@ function BotsGame() {
       4: "destructor",
       5: "lancha",
       6: "fragata",
-      7: "superportaaviones"
+      7: "superportaaviones",
     };
     return board.map((row) =>
       row.map((cell) => {
@@ -185,6 +185,7 @@ function BotsGame() {
           setWinner(data.winner === playerId);
           setLastShot(data.lastShot || null);
           setShotHistory(data.shotHistory || []);
+          setGameConfig(data.gameConfig);
           setIsPlayerTurn(data.turn === playerId && !data.gameOver);
           setGameStatus(
             data.gameOver
@@ -203,8 +204,10 @@ function BotsGame() {
         });
     };
 
-    const savedConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "null");
-    setGameConfig(savedConfig);
+    /*const savedConfig = JSON.parse(
+      sessionStorage.getItem("gameConfig") || "null"
+    );
+    setGameConfig(savedConfig);*/
 
     client.onStompError = (err) => {
       console.error("🔴 STOMP error:", err);
@@ -238,10 +241,12 @@ function BotsGame() {
   };
 
   const handleExitGame = () => {
-    stompClient.current?.publish({
-      destination: `/app/game/bot/${gameId}/abandon`,
-      body: JSON.stringify({ playerId, gameId }),
-    });
+    if (!gameOver) {
+      stompClient.current?.publish({
+        destination: `/app/game/bot/${gameId}/abandon`,
+        body: JSON.stringify({ playerId, gameId }),
+      });
+    }
     stompClient.current?.deactivate();
     sessionStorage.removeItem("playerBoard");
     navigate("/");
@@ -326,34 +331,33 @@ function BotsGame() {
     );
   };
 
-const renderShipCounter = () => {
-  // Obtener configuración del juego desde sessionStorage
-  const gameConfig = JSON.parse(sessionStorage.getItem("gameConfig") || "{}");
-  const totalShips = gameConfig.totalShips;
-  
-  return (
-    <div className="ship-counter">
-      <div className="player-counter">
-        <p>
-          Tus barcos hundidos:{" "}
-          <span className="counter">
-            {sunkShips.player.length}/{totalShips}
-          </span>
-        </p>
-      </div>
-      <div className="opponent-counter">
-        <p>
-          Barcos enemigos hundidos:{" "}
-          <span className="counter">
-            {sunkShips.opponent.length}/{totalShips}
-          </span>
-        </p>
-      </div>
-    </div>
-  );
-};
+  const renderShipCounter = () => {
+    if (!gameConfig) return null;
+    const totalShips = gameConfig.totalShips;
 
-  if (!isReady || !playerBoard || !opponentBoard) {
+    return (
+      <div className="ship-counter">
+        <div className="player-counter">
+          <p>
+            Tus barcos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.player.length}/{totalShips}
+            </span>
+          </p>
+        </div>
+        <div className="opponent-counter">
+          <p>
+            Barcos enemigos hundidos:{" "}
+            <span className="counter">
+              {sunkShips.opponent.length}/{totalShips}
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  if (!isReady || !playerBoard || !opponentBoard || !gameConfig) {
     return (
       <div className="game-container">
         <h2>Cargando juego...</h2>

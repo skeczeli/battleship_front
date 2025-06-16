@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useUser } from "contexts/UserContext";
 import "styles/ranking.css";
 
 const RankingTable = () => {
@@ -34,8 +35,9 @@ const RankingTable = () => {
     fetchRanking();
   }, []);
 
+  const currentUsername = useUser().playerId;
+
   return (
-    // QUITAR el div ranking-container y el h1 título
     <>
       <div className="table-container">
         <table className="ranking-table">
@@ -50,6 +52,7 @@ const RankingTable = () => {
           <tbody>
             {currentItems.map((player) => {
               const category = getCategoryInfo(player.score);
+              const isCurrentUser = currentUsername === player.username;
               return (
                 <tr key={player.rank}>
                   <td>
@@ -59,12 +62,16 @@ const RankingTable = () => {
                       }`}
                     >
                       {player.rank}
+                      {isCurrentUser && <span className="you-badge">Tú</span>}
                     </div>
                   </td>
                   <td>
                     <div className="player-name">
                       <Link to={`/profile/${player.username}`}>
                         {player.username}
+                        {isCurrentUser && (
+                          <span className="you-text"> (Tú)</span>
+                        )}
                       </Link>
                     </div>
                   </td>

@@ -79,6 +79,7 @@ function RandomUserGame() {
           const isMyTurn = data.turn === playerId;
           setIsPlayerTurn(isMyTurn);
           setGameStatus(isMyTurn ? "Tu turno" : "Turno del oponente");
+          resume();
           break;
         case "SHOT_RESULT":
           const isOwn = data.playerId === playerId;
@@ -182,6 +183,58 @@ function RandomUserGame() {
     [playerId, user, opponentName]
   );
 
+  const resume = () => {
+    console.log("🟢 Ejecutando resume()");
+    fetch(
+      `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
+    )
+      .then((res) => {
+        if (!res.ok && !res.status === "bad_request")
+          throw new Error("No se encontró la partida");
+        return res.json();
+      })
+      .then((data) => {
+        console.log("📦 Datos de resume:", data);
+        if (data.status === "WAITING_FOR_OPPONENT") {
+          setGameStatus("Esperando a que el oponente se una...");
+          return;
+        }
+
+        if (data.error !== undefined) {
+          setGameStatus(data.error);
+          navigate("/");
+          return;
+        }
+
+        console.log("🔄 Estado reanudado:", data);
+        setPlayerBoard(mapBoardToNames(data.playerBoard));
+        setOpponentBoard(data.opponentBoard);
+        setSunkShips(data.sunkShips);
+        setShotHistory(data.shotHistory || []);
+        setLastShot(data.lastShot || null);
+        setChatMessages(data.chatMessages || []); // ← Restaurar mensajes de chat
+        setGameConfig(data.gameConfig);
+        setGameOver(data.gameOver);
+        setWinner(data.winner === playerId);
+        setIsPlayerTurn(data.turn === playerId && !data.gameOver);
+        setGameStatus(
+          data.gameOver
+            ? data.winner === playerId
+              ? "¡Ganaste!"
+              : "¡Perdiste!"
+            : data.turn === playerId
+            ? "Tu turno"
+            : "Turno del oponente"
+        );
+        setGameStarted(true);
+      })
+      .catch((err) => {
+        console.error("❌ Error al reanudar la partida:", err);
+        setGameStatus("Error al reanudar la partida. Empezá una nueva.");
+        sessionStorage.removeItem("sessionId");
+      });
+  };
+
   useEffect(() => {
     if (!isReady || !gameId || !playerId || stompInitialized.current) return;
     stompInitialized.current = true;
@@ -201,61 +254,10 @@ function RandomUserGame() {
         handleGameEvent(data);
       });
 
-      const resume = () => {
-        console.log("🟢 Ejecutando resume()");
-        fetch(
-          `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
-        )
-          .then((res) => {
-            if (!res.ok && !res.status === "bad_request")
-              throw new Error("No se encontró la partida");
-            return res.json();
-          })
-          .then((data) => {
-            console.log("📦 Datos de resume:", data);
-            if (data.status === "WAITING_FOR_OPPONENT") {
-              setGameStatus("Esperando a que el oponente se una...");
-              return;
-            }
-
-            if (data.error !== undefined) {
-              setGameStatus(data.error);
-              navigate("/");
-              return;
-            }
-
-            console.log("🔄 Estado reanudado:", data);
-            setPlayerBoard(mapBoardToNames(data.playerBoard));
-            setOpponentBoard(data.opponentBoard);
-            setSunkShips(data.sunkShips);
-            setShotHistory(data.shotHistory || []);
-            setLastShot(data.lastShot || null);
-            setChatMessages(data.chatMessages || []); // ← Restaurar mensajes de chat
-            setGameOver(data.gameOver);
-            setWinner(data.winner === playerId);
-            setIsPlayerTurn(data.turn === playerId && !data.gameOver);
-            setGameStatus(
-              data.gameOver
-                ? data.winner === playerId
-                  ? "¡Ganaste!"
-                  : "¡Perdiste!"
-                : data.turn === playerId
-                ? "Tu turno"
-                : "Turno del oponente"
-            );
-            setGameStarted(true);
-          })
-          .catch((err) => {
-            console.error("❌ Error al reanudar la partida:", err);
-            setGameStatus("Error al reanudar la partida. Empezá una nueva.");
-            sessionStorage.removeItem("sessionId");
-          });
-      };
-
-      const savedConfig = JSON.parse(
+      /*const savedConfig = JSON.parse(
         sessionStorage.getItem("gameConfig") || "null"
       );
-      setGameConfig(savedConfig);
+      setGameConfig(savedConfig);*/
       const joinedAlready = sessionStorage.getItem("joinedAlready") === "true";
 
       if (
