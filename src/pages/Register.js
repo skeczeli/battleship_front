@@ -75,71 +75,68 @@ function Register() {
   };
 
   return (
-    <div className="container">
+    <div className="profile-container">
       <h1>Register</h1>
-      <form onSubmit={handleSubmit} className="form-container">
-        <div className="form-group">
-          <label htmlFor="username">Username:</label>
+      <form onSubmit={handleSubmit} className="profile-form">
+        <label>
+          Username:
           <input
             type="text"
-            id="username"
             name="username"
             value={formData.username}
             onChange={handleChange}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="name">Name:</label>
+        </label>
+
+        <label>
+          Name:
           <input
             type="text"
-            id="name"
             name="name"
             value={formData.name}
             onChange={handleChange}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="email">Email:</label>
+        </label>
+
+        <label>
+          Email:
           <input
             type="email"
-            id="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password:</label>
+        </label>
+
+        <label>
+          Password:
           <input
             type="password"
-            id="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
             required
           />
-        </div>
-        <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password:</label>
+        </label>
+
+        <label>
+          Confirm Password:
           <input
             type="password"
-            id="confirmPassword"
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
             required
           />
-        </div>
-        <button type="submit" className="button">
-          Register
-        </button>
+        </label>
+        <button type="submit">Register</button>
+        <p>
+          Already have an account? <Link to="/login">Login in here</Link>
+        </p>
       </form>
-      <p>
-        Already have an account? <Link to="/login">Login in here</Link>
-      </p>
     </div>
   );
 }
