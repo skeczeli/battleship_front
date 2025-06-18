@@ -73,6 +73,8 @@ function Setup({
     handleBoardLeave,
     handleRemoveShip,
     handleSelectShip,
+    setBoard,
+    setPlacedShips,
     resetBoard,
     canPlaceAtCurrentPosition,
   } = useBoard(
@@ -105,6 +107,68 @@ function Setup({
 
   const totalShips = gameConfig?.totalShips || ships.length;
 
+  const handleRandomPlacement = () => {
+    const newBoard = Array(boardSize)
+      .fill(null)
+      .map(() => Array(boardSize).fill(null));
+    const newPlacedShips = [];
+
+    const canPlaceShip = (board, row, col, size, orientation) => {
+      const isHorizontal = orientation === "horizontal";
+
+      if (isHorizontal && col + size > boardSize) return false;
+      if (!isHorizontal && row + size > boardSize) return false;
+
+      for (let i = 0; i < size; i++) {
+        const checkRow = isHorizontal ? row : row + i;
+        const checkCol = isHorizontal ? col + i : col;
+
+        if (board[checkRow][checkCol] !== null) return false;
+      }
+      return true;
+    };
+
+    const placeShip = (board, ship, row, col, orientation) => {
+      const isHorizontal = orientation === "horizontal";
+
+      for (let i = 0; i < ship.size; i++) {
+        const placeRow = isHorizontal ? row : row + i;
+        const placeCol = isHorizontal ? col + i : col;
+        board[placeRow][placeCol] = ship.id;
+      }
+    };
+
+    // Intentar colocar cada barco
+    for (const ship of ships) {
+      let placed = false;
+      let attempts = 0;
+      const maxAttempts = 100;
+
+      while (!placed && attempts < maxAttempts) {
+        const orientation = Math.random() < 0.5 ? "horizontal" : "vertical";
+        const row = Math.floor(Math.random() * boardSize);
+        const col = Math.floor(Math.random() * boardSize);
+
+        if (canPlaceShip(newBoard, row, col, ship.size, orientation)) {
+          placeShip(newBoard, ship, row, col, orientation);
+          newPlacedShips.push(ship.id);
+          placed = true;
+        }
+        attempts++;
+      }
+
+      if (!placed) {
+        alert(
+          "No se pudieron colocar todos los barcos automáticamente. Intenta de nuevo."
+        );
+        return;
+      }
+    }
+
+    setBoard(newBoard);
+    setPlacedShips(newPlacedShips);
+  };
+
   return (
     <div className="setup-container">
       <div className="controls">
@@ -121,6 +185,8 @@ function Setup({
             {orientation === "horizontal" ? "Horizontal" : "Vertical"}
           </button>
           <button onClick={resetBoard}>Reiniciar</button>
+
+          <button onClick={handleRandomPlacement}>Colocar al azar</button>
 
           {/* Input para unirse a partida (solo en multiplayer) */}
           {showJoinOption && (
