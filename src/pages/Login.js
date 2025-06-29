@@ -1,15 +1,14 @@
-// src/pages/Login.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { setPlayerId } from "services/PlayerService";
 import { useUser } from "contexts/UserContext";
-
 import "styles/register.css";
 
 function Login() {
   const { login } = useUser();
   const navigate = useNavigate();
-
+  const [error, setError] = useState("");
+  
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     if (userData) {
@@ -17,6 +16,14 @@ function Login() {
       navigate(`/profile/${userData.username}`);
     }
   }, [navigate]);
+
+  // Auto-ocultar mensajes después de 3 segundos
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -46,7 +53,7 @@ function Login() {
 
         if (!token) {
           console.error("No se pudo extraer el token");
-          alert("Falló la autenticación");
+          setError("Authentication failed");
           return;
         }
 
@@ -65,42 +72,47 @@ function Login() {
         navigate("/");
       } else {
         const errorData = await response.text();
-        alert(errorData || "Error en la autenticación");
+        setError(errorData || "Authentication error");
       }
     } catch (err) {
       console.error("Error en login:", err);
-      alert("No se pudo conectar con el servidor");
+      setError("Could not connect to server");
     }
   };
 
   return (
-    <div className="profile-container">
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit} className="profile-form">
-        <label htmlFor="username">Username:</label>
-        <input
-          type="text"
-          id="username"
-          name="username"
-          value={formData.username}
-          onChange={handleChange}
-          required
-        />
-        <label htmlFor="password">Password:</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Login</button>
-        <p>
-          Don't have an account? <Link to="/register">Register here</Link>
-        </p>
-      </form>
-    </div>
+    <>
+      {/* Mensaje flotante hermoso */}
+      {error && <div className="floating-message error-floating">{error}</div>}
+      
+      <div className="profile-container">
+        <h1>Login</h1>
+        <form onSubmit={handleSubmit} className="profile-form">
+          <label htmlFor="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+          <label htmlFor="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button type="submit">Login</button>
+          <p className="auth-link">
+            Don't have an account? <Link to="/register">Register here</Link>
+          </p>
+        </form>
+      </div>
+    </>
   );
 }
 

@@ -1,18 +1,35 @@
-// src/pages/Register.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useUser } from "contexts/UserContext"; // ✅ agregado
 import "../styles/register.css";
 
 function Register() {
   const navigate = useNavigate();
+  const { login } = useUser(); // ✅ movido aquí (fuera de handleSubmit)
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     if (userData) {
-      // Redirect logged-in users to the home page or profile page
       navigate(`/profile/${userData.username}`);
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   const [formData, setFormData] = useState({
     username: "",
     name: "",
@@ -33,14 +50,14 @@ function Register() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      setError("Las contraseñas no coinciden");
       return;
     }
 
     const userDTO = {
       username: formData.username,
       password: formData.password,
-      name: formData.name, // o como corresponda
+      name: formData.name,
       email: formData.email,
     };
 
@@ -57,87 +74,114 @@ function Register() {
       console.log("Respuesta del servidor:", result);
 
       if (response.ok) {
-        alert("Usuario registrado correctamente");
-        // Guardar sesión simple
-        localStorage.setItem("user", JSON.stringify(userDTO));
+        setMessage("¡Usuario registrado correctamente! 🎉");
 
-        // Redirigir (por ejemplo, a /dashboard o donde tengas la parte logueada)
-        window.location.href = "/"; // o usar navigate si usás react-router v6
+        // ✅ login automático
+        const loginResponse = await fetch("http://localhost:8080/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: userDTO.username,
+            password: userDTO.password,
+          }),
+        });
+
+        if (loginResponse.ok) {
+          const user = await loginResponse.json();
+          const authHeader = loginResponse.headers.get("Authorization");
+          const token = authHeader?.replace("Bearer ", "");
+
+          if (token) {
+            login(user, token); // ✅ se guarda correctamente
+            navigate("/");
+          } else {
+            console.error("No se recibió token tras el registro");
+            setError("Error al iniciar sesión automáticamente");
+          }
+        } else {
+          setError("Error al iniciar sesión tras el registro");
+        }
       } else if (response.status === 409) {
-        alert("Ese nombre de usuario ya está en uso. Elegí otro.");
+        setError("❌ Ese nombre de usuario ya está en uso. Elegí otro.");
       } else {
-        alert("Error al registrar: " + result);
+        setError("❌ Error al registrar: " + result);
       }
     } catch (error) {
       console.error("Error en el fetch:", error);
-      alert("Error al conectar con el servidor");
+      setError("❌ Error al conectar con el servidor");
     }
   };
 
   return (
-    <div className="profile-container">
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit} className="profile-form">
-        <label>
-          Username:
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-        </label>
+    <>
+      {error && <div className="floating-message error-floating">{error}</div>}
+      {message && <div className="floating-message success-floating">{message}</div>}
 
-        <label>
-          Name:
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-        </label>
+      <div className="profile-container">
+        <h1>Register</h1>
+        <form onSubmit={handleSubmit} className="profile-form">
+          <label>
+            Username:
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+          </label>
 
-        <label>
-          Email:
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </label>
+          <label>
+            Name:
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </label>
 
-        <label>
-          Password:
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </label>
+          <label>
+            Email:
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </label>
 
-        <label>
-          Confirm Password:
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        </label>
-        <button type="submit">Register</button>
-        <p>
-          Already have an account? <Link to="/login">Login in here</Link>
-        </p>
-      </form>
-    </div>
+          <label>
+            Password:
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </label>
+
+          <label>
+            Confirm Password:
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </label>
+
+          <button type="submit">Register</button>
+          <p className="auth-link">
+            Already have an account? <Link to="/login">Log in here</Link>
+          </p>
+        </form>
+      </div>
+    </>
   );
 }
 

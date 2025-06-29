@@ -43,17 +43,13 @@ export function UserProvider({ children }) {
 
   const login = (userData, token) => {
     console.log("UserContext login llamado con:", userData, token); // Debug
-    localStorage.setItem("user", JSON.stringify(userData));
-    if (token) {
-      localStorage.setItem("token", token);
-      console.log("Token guardado:", token); // Debug
-    } else {
-      console.error("No se recibió token en login"); // Debug
-    }
+    const fullUser = { ...userData, token };
+    localStorage.setItem("user", JSON.stringify(fullUser));
+    setUser(fullUser); // 👈 solo esta línea
     localStorage.setItem(PLAYER_ID_KEY, `${userData.username}`);
-    setUser(userData);
     setPlayerId(`${userData.username}`);
   };
+
 
   const logout = () => {
     localStorage.removeItem("user");

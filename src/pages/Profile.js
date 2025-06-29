@@ -9,6 +9,7 @@ const Profile = () => {
   const [error, setError] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -30,7 +31,7 @@ const Profile = () => {
           headers
         });
         
-        if (!res.ok) throw new Error("No se pudo cargar el perfil");
+        if (!res.ok) throw new Error("Could not load profile");
         const data = await res.json();
         setProfile(data);
         
@@ -39,16 +40,31 @@ const Profile = () => {
           setIsFollowing(data.isFollowing);
         }
       } catch (err) {
-        setError("Error al cargar el perfil");
+        setError("Error loading profile");
       }
     };
 
     fetchProfile();
   }, [username]);
 
+  // Auto-ocultar mensajes después de 5 segundos
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const handleFollow = async () => {
     if (!currentUser) {
-      alert("Inicia sesión para seguir a otros usuarios.");
+      setError("Inicia sesión para seguir a otros usuarios.");
       return;
     }
 
@@ -57,7 +73,7 @@ const Profile = () => {
     
     if (!token) {
       console.error("No hay token en localStorage"); // Debug
-      alert("Tu sesión ha expirado. Inicia sesión nuevamente.");
+      setError("Tu sesión ha expirado. Inicia sesión nuevamente.");
       return;
     }
 
@@ -86,7 +102,7 @@ const Profile = () => {
       if (!res.ok) {
         const errorData = await res.text();
         console.error("Error del servidor:", errorData); // Debug
-        alert("Error: " + errorData);
+        setError("Error: " + errorData);
         return;
       }
 
@@ -108,7 +124,7 @@ const Profile = () => {
 
     } catch (error) {
       console.error("Error al procesar seguimiento:", error);
-      alert("Error de conexión: " + error.message);
+      setError("Error de conexión: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -134,34 +150,25 @@ const Profile = () => {
 
       if (!res.ok) {
         const errorData = await res.text();
-        alert(errorData || "No se pudo eliminar la cuenta.");
+        setError(errorData || "No se pudo eliminar la cuenta.");
         return;
       }
 
-      alert("Cuenta eliminada correctamente.");
+      setSuccess("Cuenta eliminada correctamente.");
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (error) {
-      alert("Error al conectar con el servidor.");
+      setError("Error al conectar con el servidor.");
       console.error(error);
     }
   };
 
-  if (error) return (
-    <div className="profile-container">
-      <div className="error-state">
-        <span className="error-icon">⚠️</span>
-        <p>{error}</p>
-      </div>
-    </div>
-  );
-  
   if (!profile) return (
     <div className="profile-container">
       <div className="loading-state">
         <div className="spinner"></div>
-        <p>Cargando perfil...</p>
+        <p>Loading profile...</p>
       </div>
     </div>
   );
@@ -170,58 +177,64 @@ const Profile = () => {
   const totalGames = profile.wins + profile.losses;
 
   return (
-    <div className="profile-container">
-      <h2>Perfil de {profile.username}</h2>
-      <p>
-        <strong>Apodo:</strong> {profile.name || "Sin apodo"}
-      </p>
-      <p>
-        <strong>Email:</strong> {profile.email}
-      </p>
-      <p>
-        <strong>Partidas ganadas:</strong> {profile.wins}
-      </p>
-      <p>
-        <strong>Partidas perdidas:</strong> {profile.losses}
-      </p>
-      <p>
-        <strong>Total jugadas:</strong> {totalGames}
-      </p>
+    <>
+      {/* Mensajes flotantes hermosos */}
+      {error && <div className="floating-message error-floating">{error}</div>}
+      {success && <div className="floating-message success-floating">{success}</div>}
+      
+      <div className="profile-container">
+        <h2>Perfil de {profile.username}</h2>
+        <p>
+          <strong>Apodo:</strong> {profile.name || "Sin apodo"}
+        </p>
+        <p>
+          <strong>Email:</strong> {profile.email}
+        </p>
+        <p>
+          <strong>Partidas ganadas:</strong> {profile.wins}
+        </p>
+        <p>
+          <strong>Partidas perdidas:</strong> {profile.losses}
+        </p>
+        <p>
+          <strong>Total jugadas:</strong> {totalGames}
+        </p>
 
-      {/* Mostrar estadísticas de seguimiento si están disponibles */}
-      {profile.followersCount !== undefined && (
-        <>
-          <p>
-            <strong>Seguidores:</strong> {profile.followersCount}
-          </p>
-          <p>
-            <strong>Siguiendo:</strong> {profile.followingCount}
-          </p>
-        </>
-      )}
+        {/* Mostrar estadísticas de seguimiento si están disponibles */}
+        {profile.followersCount !== undefined && (
+          <>
+            <p>
+              <strong>Seguidores:</strong> {profile.followersCount}
+            </p>
+            <p>
+              <strong>Siguiendo:</strong> {profile.followingCount}
+            </p>
+          </>
+        )}
 
-      {isCurrentUser ? (
-        <>
-          <button
-            className="form-button"
-            onClick={() => (window.location.href = "/editprofile")}
+        {isCurrentUser ? (
+          <>
+            <button
+              className="form-button"
+              onClick={() => (window.location.href = "/editprofile")}
+            >
+              Editar perfil
+            </button>
+            <button className="form-button delete-button" onClick={handleDelete}>
+              Eliminar cuenta
+            </button>
+          </>
+        ) : (
+          <button 
+            className={`${isFollowing ? "following-button" : "follow-button"} ${isLoading ? "loading" : ""}`}
+            onClick={handleFollow}
+            disabled={isLoading}
           >
-            Editar perfil
+            {isLoading ? "..." : (isFollowing ? "Siguiendo" : "Seguir")}
           </button>
-          <button className="form-button delete-button" onClick={handleDelete}>
-            Eliminar cuenta
-          </button>
-        </>
-      ) : (
-        <button 
-          className={`${isFollowing ? "following-button" : "follow-button"} ${isLoading ? "loading" : ""}`}
-          onClick={handleFollow}
-          disabled={isLoading}
-        >
-          {isLoading ? "..." : (isFollowing ? "Siguiendo" : "Seguir")}
-        </button>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 };
 

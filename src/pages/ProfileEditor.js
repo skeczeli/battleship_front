@@ -4,6 +4,7 @@ import "../styles/register.css";
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
+    
     username: "",
     name: "",
     email: "",
@@ -11,6 +12,8 @@ const UserProfile = () => {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
@@ -25,6 +28,21 @@ const UserProfile = () => {
     }
   }, []);
 
+  // Auto-ocultar mensajes después de 3 segundos
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setError("");
@@ -32,14 +50,18 @@ const UserProfile = () => {
 
   const handleSubmit = async (e) => {
     if (!user?.token) {
-      setError("Sesión inválida. Por favor, iniciá sesión nuevamente.");
+      // Limpiar mensajes anteriores
+      setSuccess("");
+      setError("Invalid session. Please log in again.");
       return;
     }
 
     e.preventDefault();
 
     if (formData.password && formData.password !== formData.confirmPassword) {
-      setError("Las contraseñas no coinciden.");
+      // Limpiar mensajes anteriores
+      setSuccess("");
+      setError("Passwords don't match.");
       return;
     }
 
@@ -51,7 +73,9 @@ const UserProfile = () => {
     });
 
     if (Object.keys(updates).length === 0) {
-      setError("No cambiaste nada.");
+      // Limpiar mensajes anteriores
+      setSuccess("");
+      setError("You didn't change anything.");
       return;
     }
 
@@ -70,7 +94,9 @@ const UserProfile = () => {
         const newUserData = { ...user, ...updatedUser };
         setUser(newUserData);
         localStorage.setItem("user", JSON.stringify(newUserData));
-        alert("Datos actualizados correctamente.");
+        // Limpiar mensajes anteriores
+        setError("");
+        setSuccess("Data updated successfully.");
         setFormData({
           username: "",
           name: "",
@@ -78,13 +104,16 @@ const UserProfile = () => {
           password: "",
           confirmPassword: "",
         });
-        setError("");
       } else {
-        setError("Error al actualizar los datos.");
+        // Limpiar mensajes anteriores
+        setSuccess("");
+        setError("Error updating data.");
       }
     } catch (err) {
       console.error(err);
-      setError("Error de red.");
+      // Limpiar mensajes anteriores
+      setSuccess("");
+      setError("Network error.");
     }
   };
 
@@ -94,53 +123,58 @@ const UserProfile = () => {
     ); // --------------------------------------
 
   return (
-    <div className="profile-container">
-      <h2>Editar Perfil</h2>
-      {error && <p className="error-message">{error}</p>}
-      <form className="profile-form" onSubmit={handleSubmit}>
-        <label>Usuario: {user.username}</label>
-        <label>
-          Apodo:
-          <input
-            name="name"
-            placeholder={user.name || "Sin apodo"}
-            value={formData.name}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Email:
-          <input
-            type="email"
-            name="email"
-            placeholder={user.email}
-            value={formData.email}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Nueva Contraseña:
-          <input
-            type="password"
-            name="password"
-            placeholder="********"
-            value={formData.password}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Confirmar Contraseña:
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="********"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-          />
-        </label>
-        <button type="submit">Actualizar</button>
-      </form>
-    </div>
+    <>
+      {/* Mensajes flotantes hermosos */}
+      {error && <div className="floating-message error-floating">{error}</div>}
+      {success && <div className="floating-message success-floating">{success}</div>}
+      
+      <div className="profile-container">
+        <h2>Editar Perfil</h2>
+        <form className="profile-form" onSubmit={handleSubmit}>
+          <label>Usuario: {user.username}</label>
+          <label>
+            Apodo:
+            <input
+              name="name"
+              placeholder={user.name || "Sin apodo"}
+              value={formData.name}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Email:
+            <input
+              type="email"
+              name="email"
+              placeholder={user.email}
+              value={formData.email}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            New Password:
+            <input
+              type="password"
+              name="password"
+              placeholder="********"
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Confirm Password:
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="********"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
+          </label>
+          <button type="submit">Actualizar</button>
+        </form>
+      </div>
+    </>
   );
 };
 
