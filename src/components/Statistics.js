@@ -1,29 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useUser } from "../contexts/UserContext";
 
 const Statistics = ({ username, profile }) => {
-  useEffect(() => {
-    console.log("Componente Statistics montado");
-  }, []);
-
+  const { user } = useUser(); // Usar el UserContext
   const [gameHistory, setGameHistory] = useState([]);
   const [loadingGames, setLoadingGames] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchGameHistory();
-  }, [username]);
+    console.log("Componente Statistics montado");
+  }, []);
 
-  const fetchGameHistory = async () => {
+  const fetchGameHistory = useCallback(async () => {
     setLoadingGames(true);
     try {
-      const token = localStorage.getItem("token");
       const headers = {
         "Content-Type": "application/json",
       };
 
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+      // Usar el token del UserContext si existe
+      if (user && user.token) {
+        headers["Authorization"] = `Bearer ${user.token}`;
       }
+
       console.log("Iniciando fetch de historial de juegos para:", username);
 
       const res = await fetch(
@@ -39,7 +38,6 @@ const Statistics = ({ username, profile }) => {
       console.log("Historial de juegos recibido:", data);
 
       setGameHistory(data);
-      console.log("Historial de juegos recibido:", data);
       data.forEach((game, i) => {
         console.log(
           `Juego ${i + 1}: sessionId = ${game.sessionId}, id = ${game.id}`
@@ -50,7 +48,11 @@ const Statistics = ({ username, profile }) => {
     } finally {
       setLoadingGames(false);
     }
-  };
+  }, [username, user]);
+
+  useEffect(() => {
+    fetchGameHistory();
+  }, [fetchGameHistory]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -77,13 +79,69 @@ const Statistics = ({ username, profile }) => {
     window.location.href = path;
   };
 
-  const totalGames = profile.wins + profile.losses;
+  // Verificar si el usuario actual puede ver el juego
+  const canViewGame = (game) => {
+    // Solo puede ver el juego si el usuario logueado coincide con el username del perfil
+    return user && user.username === username && game.sessionId;
+  };
+
+  // Calcular estadísticas
+  const totalGames = gameHistory.filter(
+    (game) => game.result && game.status === "Finalizada"
+  ).length;
   const winRate =
     totalGames > 0 ? ((profile.wins / totalGames) * 100).toFixed(1) : 0;
+  const gameCompletionRate =
+    gameHistory.length > 0
+      ? ((totalGames / gameHistory.length) * 100).toFixed(1)
+      : 0;
+  const realOpponentCount = gameHistory.filter(
+    (game) => game.opponent && game.opponent !== "BOT"
+  ).length;
+  const realOpponentRate =
+    gameHistory.length > 0
+      ? ((realOpponentCount / gameHistory.length) * 100).toFixed(1)
+      : 0;
+  const gameAverageTime =
+    gameHistory.reduce((total, game) => {
+      if (game.startTime && game.endTime) {
+        const start = new Date(game.startTime);
+        const end = new Date(game.endTime);
+        return total + (end - start);
+      }
+      return total;
+    }, 0) / gameHistory.length;
+  const totalMs = gameAverageTime;
+  const minutes = Math.floor(totalMs / 60000);
+  const seconds = Math.round((totalMs % 60000) / 1000);
+
+  const formatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+  const boardSizesCount = gameHistory.reduce((acc, game) => {
+    if (game.boardSize) {
+      acc[game.boardSize] = (acc[game.boardSize] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  const mostCommonBoardSize = Object.entries(boardSizesCount).reduce(
+    (a, b) => (a[1] > b[1] ? a : b),
+    [null, 0]
+  )[0];
 
   return (
     <div className="statistics-container">
       <h3>Estadísticas Generales</h3>
+      <h4>Resultados de juego</h4>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-number">{totalGames}</div>
+          <div className="stat-label">Partidas Completadas</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{gameHistory.length}</div>
+          <div className="stat-label">Partidas Totales</div>
+        </div>
+      </div>
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-number">{profile.wins}</div>
@@ -93,13 +151,33 @@ const Statistics = ({ username, profile }) => {
           <div className="stat-number">{profile.losses}</div>
           <div className="stat-label">Derrotas</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-number">{totalGames}</div>
-          <div className="stat-label">Total Jugadas</div>
-        </div>
+      </div>
+      <h4>Tasas de juego</h4>
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-number">{winRate}%</div>
-          <div className="stat-label">Tasa de Victoria</div>
+          <div className="stat-label">Victorias</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{gameCompletionRate}%</div>
+          <div className="stat-label">Juegos completados</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{realOpponentRate}%</div>
+          <div className="stat-label">Juegos con oponentes reales</div>
+        </div>
+      </div>
+      <h4>Promedios de juego</h4>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-number">
+            {gameAverageTime ? formatted : "N/A"}
+          </div>
+          <div className="stat-label">Tiempo promedio por juego</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{mostCommonBoardSize || "N/A"}</div>
+          <div className="stat-label">Tamaño de tablero más común</div>
         </div>
       </div>
 
@@ -154,13 +232,14 @@ const Statistics = ({ username, profile }) => {
                       )}
                     </div>
                   </div>
-                  <button
-                    className="game-button"
-                    onClick={() => goToGame(game)}
-                    disabled={!game.sessionId}
-                  >
-                    Ver Juego
-                  </button>
+                  {canViewGame(game) && (
+                    <button
+                      className="game-button"
+                      onClick={() => goToGame(game)}
+                    >
+                      Ver Juego
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
