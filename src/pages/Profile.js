@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import Statistics from "../components/Statistics";
 import "styles/register.css";
+import "styles/statistics.css";
 
 const Profile = () => {
   const { username } = useParams();
@@ -10,6 +12,7 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -21,20 +24,20 @@ const Profile = () => {
         const headers = {
           "Content-Type": "application/json",
         };
-        
+
         // Incluir token si existe para obtener información de seguimiento
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
         const res = await fetch(`http://localhost:8080/api/users/${username}`, {
-          headers
+          headers,
         });
-        
+
         if (!res.ok) throw new Error("Could not load profile");
         const data = await res.json();
         setProfile(data);
-        
+
         // El backend ya nos dice si seguimos a este usuario
         if (data.isFollowing !== null) {
           setIsFollowing(data.isFollowing);
@@ -70,7 +73,7 @@ const Profile = () => {
 
     const token = localStorage.getItem("token");
     console.log("Token encontrado:", token); // Debug
-    
+
     if (!token) {
       console.error("No hay token en localStorage"); // Debug
       setError("Tu sesión ha expirado. Inicia sesión nuevamente.");
@@ -81,15 +84,18 @@ const Profile = () => {
 
     try {
       const endpoint = isFollowing ? "unfollow" : "follow";
-      console.log("Enviando petición a:", `http://localhost:8080/api/follow/${endpoint}`); // Debug
+      console.log(
+        "Enviando petición a:",
+        `http://localhost:8080/api/follow/${endpoint}`
+      ); // Debug
       console.log("Con token:", `Bearer ${token}`); // Debug
       console.log("Para usuario:", username); // Debug
-      
+
       const res = await fetch(`http://localhost:8080/api/follow/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           usernameToFollow: username,
@@ -111,17 +117,16 @@ const Profile = () => {
 
       // Actualizar estado local
       setIsFollowing(!isFollowing);
-      
+
       // Actualizar contador en el perfil
       if (profile) {
-        setProfile(prev => ({
+        setProfile((prev) => ({
           ...prev,
-          followersCount: isFollowing 
-            ? prev.followersCount - 1 
-            : prev.followersCount + 1
+          followersCount: isFollowing
+            ? prev.followersCount - 1
+            : prev.followersCount + 1,
         }));
       }
-
     } catch (error) {
       console.error("Error al procesar seguimiento:", error);
       setError("Error de conexión: " + error.message);
@@ -131,6 +136,7 @@ const Profile = () => {
   };
 
   const handleDelete = async () => {
+    // hacer modals!!!
     const usernameInput = prompt("Escribí tu nombre de usuario:");
     const passwordInput = prompt("Escribí tu contraseña:");
 
@@ -164,75 +170,118 @@ const Profile = () => {
     }
   };
 
-  if (!profile) return (
-    <div className="profile-container">
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Loading profile...</p>
+  if (!profile)
+    return (
+      <div className="profile-container">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading profile...</p>
+        </div>
       </div>
-    </div>
-  );
+    );
 
-  const isCurrentUser = currentUser && currentUser.username === profile.username;
+  const isCurrentUser =
+    currentUser && currentUser.username === profile.username;
   const totalGames = profile.wins + profile.losses;
 
   return (
     <>
       {/* Mensajes flotantes hermosos */}
       {error && <div className="floating-message error-floating">{error}</div>}
-      {success && <div className="floating-message success-floating">{success}</div>}
-      
+      {success && (
+        <div className="floating-message success-floating">{success}</div>
+      )}
+
       <div className="profile-container">
         <h2>Perfil de {profile.username}</h2>
-        <p>
-          <strong>Apodo:</strong> {profile.name || "Sin apodo"}
-        </p>
-        <p>
-          <strong>Email:</strong> {profile.email}
-        </p>
-        <p>
-          <strong>Partidas ganadas:</strong> {profile.wins}
-        </p>
-        <p>
-          <strong>Partidas perdidas:</strong> {profile.losses}
-        </p>
-        <p>
-          <strong>Total jugadas:</strong> {totalGames}
-        </p>
 
-        {/* Mostrar estadísticas de seguimiento si están disponibles */}
-        {profile.followersCount !== undefined && (
-          <>
-            <p>
-              <strong>Seguidores:</strong> {profile.followersCount}
-            </p>
-            <p>
-              <strong>Siguiendo:</strong> {profile.followingCount}
-            </p>
-          </>
-        )}
-
-        {isCurrentUser ? (
-          <>
-            <button
-              className="form-button"
-              onClick={() => (window.location.href = "/editprofile")}
-            >
-              Editar perfil
-            </button>
-            <button className="form-button delete-button" onClick={handleDelete}>
-              Eliminar cuenta
-            </button>
-          </>
-        ) : (
-          <button 
-            className={`${isFollowing ? "following-button" : "follow-button"} ${isLoading ? "loading" : ""}`}
-            onClick={handleFollow}
-            disabled={isLoading}
+        {/* Tabs */}
+        <div className="profile-tabs">
+          <button
+            className={`tab-button ${activeTab === "general" ? "active" : ""}`}
+            onClick={() => setActiveTab("general")}
           >
-            {isLoading ? "..." : (isFollowing ? "Siguiendo" : "Seguir")}
+            General
           </button>
-        )}
+          <button
+            className={`tab-button ${
+              activeTab === "estadisticas" ? "active" : ""
+            }`}
+            onClick={() => {
+              console.log("activeTab es:", activeTab);
+
+              setActiveTab("estadisticas");
+            }}
+          >
+            Estadísticas
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="tab-content">
+          {activeTab === "general" && (
+            <div className="general-tab">
+              <p>
+                <strong>Apodo:</strong> {profile.name || "Sin apodo"}
+              </p>
+              <p>
+                <strong>Email:</strong> {profile.email}
+              </p>
+              <p>
+                <strong>Partidas ganadas:</strong> {profile.wins}
+              </p>
+              <p>
+                <strong>Partidas perdidas:</strong> {profile.losses}
+              </p>
+              <p>
+                <strong>Total jugadas:</strong> {totalGames}
+              </p>
+
+              {/* Mostrar estadísticas de seguimiento si están disponibles */}
+              {profile.followersCount !== undefined && (
+                <>
+                  <p>
+                    <strong>Seguidores:</strong> {profile.followersCount}
+                  </p>
+                  <p>
+                    <strong>Siguiendo:</strong> {profile.followingCount}
+                  </p>
+                </>
+              )}
+
+              {isCurrentUser ? (
+                <>
+                  <button
+                    className="form-button"
+                    onClick={() => (window.location.href = "/editprofile")}
+                  >
+                    Editar perfil
+                  </button>
+                  <button
+                    className="form-button delete-button"
+                    onClick={handleDelete}
+                  >
+                    Eliminar cuenta
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`${
+                    isFollowing ? "following-button" : "follow-button"
+                  } ${isLoading ? "loading" : ""}`}
+                  onClick={handleFollow}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "..." : isFollowing ? "Siguiendo" : "Seguir"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {activeTab === "estadisticas" && (
+            <Statistics username={username} profile={profile} />
+          )}
+        </div>
       </div>
     </>
   );

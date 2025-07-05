@@ -50,7 +50,6 @@ export function UserProvider({ children }) {
     setPlayerId(`${userData.username}`);
   };
 
-
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token"); // Eliminar el token

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useUser } from "../../contexts/UserContext";
 import "styles/ranking.css";
 
 const FriendsRanking = () => {
@@ -7,6 +8,7 @@ const FriendsRanking = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { user } = useUser();
   const itemsPerPage = 10;
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -25,20 +27,20 @@ const FriendsRanking = () => {
   useEffect(() => {
     const fetchFriendsRanking = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("user") || "{}")?.token;
-        
-        if (!token) {
+        if (!user || !user.token) {
           setError("Debes iniciar sesión para ver el ranking de amigos");
           setLoading(false);
           return;
         }
 
-        console.log("Token a enviar:", token);
-        const response = await fetch("http://localhost:8080/api/follow/friends-ranking", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          "http://localhost:8080/api/follow/friends-ranking",
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           if (response.status === 401) {
@@ -94,7 +96,11 @@ const FriendsRanking = () => {
           <span className="empty-icon">👥</span>
           <h3>Sin amigos en el ranking</h3>
           <p>Sigue a otros jugadores para ver su ranking aquí</p>
-          <Link to="/ranking" className="form-button" style={{marginTop: "1rem"}}>
+          <Link
+            to="/ranking"
+            className="form-button"
+            style={{ marginTop: "1rem" }}
+          >
             Ver ranking global
           </Link>
         </div>
@@ -117,9 +123,11 @@ const FriendsRanking = () => {
           <tbody>
             {currentItems.map((player) => {
               const category = getCategoryInfo(player.score);
-              const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+              const currentUser = JSON.parse(
+                localStorage.getItem("user") || "{}"
+              );
               const isCurrentUser = currentUser.username === player.username;
-              
+
               return (
                 <tr key={player.username}>
                   <td>
@@ -129,16 +137,16 @@ const FriendsRanking = () => {
                       }`}
                     >
                       {player.rank}
-                      {isCurrentUser && (
-                        <span className="you-badge">Tú</span>
-                      )}
+                      {isCurrentUser && <span className="you-badge">Tú</span>}
                     </div>
                   </td>
                   <td>
                     <div className="player-name">
                       <Link to={`/profile/${player.username}`}>
                         {player.username}
-                        {isCurrentUser && <span className="you-text"> (Tú)</span>}
+                        {isCurrentUser && (
+                          <span className="you-text"> (Tú)</span>
+                        )}
                       </Link>
                     </div>
                   </td>
