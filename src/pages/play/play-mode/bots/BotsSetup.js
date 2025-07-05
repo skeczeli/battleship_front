@@ -151,6 +151,13 @@ function BotsSetup() {
                 <div className="difficulty-icon">🔥</div>
                 <span>Hard</span>
               </div>
+              <div
+                className={`difficulty-option ${difficulty === "probabilistic" ? "active" : ""}`}
+                onClick={() => setDifficulty("probabilistic")}
+              >
+                <div className="difficulty-icon">🧠</div>
+                <span>Pro</span>
+              </div>
             </div>
           </div>
 

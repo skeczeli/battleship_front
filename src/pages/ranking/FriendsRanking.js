@@ -25,7 +25,7 @@ const FriendsRanking = () => {
   useEffect(() => {
     const fetchFriendsRanking = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = JSON.parse(localStorage.getItem("user") || "{}")?.token;
         
         if (!token) {
           setError("Debes iniciar sesión para ver el ranking de amigos");
@@ -33,6 +33,7 @@ const FriendsRanking = () => {
           return;
         }
 
+        console.log("Token a enviar:", token);
         const response = await fetch("http://localhost:8080/api/follow/friends-ranking", {
           headers: {
             "Authorization": `Bearer ${token}`,
