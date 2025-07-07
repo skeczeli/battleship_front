@@ -10,7 +10,6 @@ import BotsGame from "./pages/play/play-mode/bots/BotsGame";
 import RandomUserSetup from "./pages/play/play-mode/random/RandomUserSetup";
 import RandomUserGame from "./pages/play/play-mode/random/RandomUserGame";
 import PrivateRoomSetup from "./pages/play/play-mode/private/PrivateRoomSetup";
-import PrivateRoomGame from "./pages/play/play-mode/private/PrivateRoomGame";
 import Ranking from "./pages/ranking/Ranking";
 import Navbar from "./components/Navbar";
 import ProfileEditor from "./pages/ProfileEditor";
@@ -37,12 +36,14 @@ function App() {
           <Route path="/play-mode/bots/setup" element={<BotsSetup />} />
           <Route path="/play-mode/bots/game/:gameId" element={<BotsGame />} />
           <Route path="/play-mode/random/setup" element={<RandomUserSetup />} />
-          <Route path="/play-mode/random/game/:gameId" element={<RandomUserGame />} />
+          <Route
+            path="/play-mode/random/game/:gameId"
+            element={<RandomUserGame />}
+          />
           <Route
             path="/play-mode/private/setup"
             element={<PrivateRoomSetup />}
           />
-          <Route path="/play-mode/private/game" element={<PrivateRoomGame />} />
           <Route path="/ranking" element={<Ranking />} />
         </Routes>
       </UserProvider>

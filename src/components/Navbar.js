@@ -17,7 +17,7 @@ function Navbar() {
       <div className="navbar-left">
         {location.pathname !== "/" && (
           <Link to="/">
-            <button className="button">Home</button>
+            <button className="button">Inicio</button>
           </Link>
         )}
       </div>
@@ -29,19 +29,19 @@ function Navbar() {
               <button className="button">Perfil ({user.username})</button>
             </Link>
             <button className="button" onClick={handleLogout}>
-              Log out
+              Cerrar sesión
             </button>
           </>
         ) : (
           <>
             {location.pathname !== "/login" && (
               <Link to="/login">
-                <button className="button">Log in</button>
+                <button className="button">Iniciar Sesión</button>
               </Link>
             )}
             {location.pathname !== "/register" && (
               <Link to="/register">
-                <button className="button">Register</button>
+                <button className="button">Registrarse</button>
               </Link>
             )}
           </>

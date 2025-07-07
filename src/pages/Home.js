@@ -8,9 +8,9 @@ function Home() {
       <div className="container">
         <h1>Battleship</h1>
         <div className="middle-buttons">
-          <Button to="/play">Play</Button>
+          <Button to="/play">Jugar</Button>
           <Button to="/ranking">Ranking</Button>
-          <Button to="/rules">Rules</Button>
+          <Button to="/rules">Reglas</Button>
         </div>
       </div>
     </div>

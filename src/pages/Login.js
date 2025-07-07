@@ -8,7 +8,7 @@ function Login() {
   const { login } = useUser();
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  
+
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     if (userData) {
@@ -84,11 +84,11 @@ function Login() {
     <>
       {/* Mensaje flotante hermoso */}
       {error && <div className="floating-message error-floating">{error}</div>}
-      
+
       <div className="profile-container">
-        <h1>Login</h1>
+        <h1>Iniciar sesión</h1>
         <form onSubmit={handleSubmit} className="profile-form">
-          <label htmlFor="username">Username:</label>
+          <label htmlFor="username">Usuario:</label>
           <input
             type="text"
             id="username"
@@ -97,7 +97,7 @@ function Login() {
             onChange={handleChange}
             required
           />
-          <label htmlFor="password">Password:</label>
+          <label htmlFor="password">Contraseña:</label>
           <input
             type="password"
             id="password"
@@ -106,9 +106,9 @@ function Login() {
             onChange={handleChange}
             required
           />
-          <button type="submit">Login</button>
+          <button type="submit">Iniciar Sesión</button>
           <p className="auth-link">
-            Don't have an account? <Link to="/register">Register here</Link>
+            ¿No tienes una cuenta? <Link to="/register">Registrate aquí</Link>
           </p>
         </form>
       </div>

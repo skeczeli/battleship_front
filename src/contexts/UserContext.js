@@ -45,6 +45,7 @@ export function UserProvider({ children }) {
     console.log("UserContext login llamado con:", userData, token); // Debug
     const fullUser = { ...userData, token };
     localStorage.setItem("user", JSON.stringify(fullUser));
+    localStorage.setItem("token", token);
     setUser(fullUser); // 👈 solo esta línea
     localStorage.setItem(PLAYER_ID_KEY, `${userData.username}`);
     setPlayerId(`${userData.username}`);

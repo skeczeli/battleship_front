@@ -5,19 +5,18 @@ import "styles/main.css";
 function Play() {
   return (
     <div className="container">
-      <div className="middle-message">Choose your opponent</div>
+      <div className="middle-message">Elije tu oponente</div>
       <div className="middle-buttons">
-        
         <Link to="/play-mode/bots/setup">
           <button className="button">Battleship Bot</button>
         </Link>
 
         <Link to="/play-mode/random/setup">
-          <button className="button">Random user</button>
+          <button className="button">Rival aleatorio</button>
         </Link>
-        
+
         <Link to="/play-mode/private/setup">
-          <button className="button">Private rooms</button>
+          <button className="button">Sala privada</button>
         </Link>
       </div>
     </div>

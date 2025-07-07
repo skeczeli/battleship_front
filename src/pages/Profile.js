@@ -14,6 +14,14 @@ const Profile = () => {
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("general");
 
+  const getCategoryInfo = (points) => {
+    if (points >= 1000) return { name: "Diamante" };
+    if (points >= 700) return { name: "Platino" };
+    if (points >= 400) return { name: "Oro" };
+    if (points >= 100) return { name: "Plata" };
+    return { name: "Bronce" };
+  };
+
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) setCurrentUser(storedUser);
@@ -228,13 +236,8 @@ const Profile = () => {
                 <strong>Email:</strong> {profile.email}
               </p>
               <p>
-                <strong>Partidas ganadas:</strong> {profile.wins}
-              </p>
-              <p>
-                <strong>Partidas perdidas:</strong> {profile.losses}
-              </p>
-              <p>
-                <strong>Total jugadas:</strong> {totalGames}
+                <strong>Nivel:</strong>{" "}
+                {getCategoryInfo(10 * profile.wins - 10 * profile.losses).name}
               </p>
 
               {/* Mostrar estadísticas de seguimiento si están disponibles */}

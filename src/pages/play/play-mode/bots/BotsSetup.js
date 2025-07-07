@@ -28,9 +28,9 @@ function BotsSetup() {
       ships: [
         { type: "destructor", size: 4, count: 1 },
         { type: "submarino", size: 3, count: 1 },
-        { type: "lancha", size: 2, count: 1 }
+        { type: "lancha", size: 2, count: 1 },
       ],
-      totalShips: 3
+      totalShips: 3,
     },
     normal: {
       boardSize: 10,
@@ -39,9 +39,9 @@ function BotsSetup() {
         { type: "acorazado", size: 4, count: 1 },
         { type: "submarino", size: 3, count: 1 },
         { type: "destructor", size: 3, count: 1 },
-        { type: "lancha", size: 2, count: 1 }
+        { type: "lancha", size: 2, count: 1 },
       ],
-      totalShips: 5
+      totalShips: 5,
     },
     large: {
       boardSize: 14,
@@ -52,10 +52,10 @@ function BotsSetup() {
         { type: "submarino", size: 3, count: 1 },
         { type: "destructor", size: 3, count: 1 },
         { type: "fragata", size: 3, count: 1 },
-        { type: "lancha", size: 2, count: 1 }
+        { type: "lancha", size: 2, count: 1 },
       ],
-      totalShips: 7
-    }
+      totalShips: 7,
+    },
   };
 
   const currentConfig = gameConfigs[gameSize];
@@ -67,7 +67,7 @@ function BotsSetup() {
     destructor: 4,
     lancha: 5,
     fragata: 6,
-    superportaaviones: 7
+    superportaaviones: 7,
   };
 
   const mapBoardToIntegers = (board) => {
@@ -82,7 +82,9 @@ function BotsSetup() {
 
   const handleConfirm = async (board, placedShips) => {
     if (placedShips.length < currentConfig.totalShips) {
-      alert(`Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`);
+      alert(
+        `Coloca todos los ${currentConfig.totalShips} barcos antes de empezar el juego.`
+      );
       return;
     }
 
@@ -94,11 +96,11 @@ function BotsSetup() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          board: numericBoard, 
-          playerId, 
+        body: JSON.stringify({
+          board: numericBoard,
+          playerId,
           difficulty,
-          gameSize
+          gameSize,
         }),
       });
 
@@ -111,10 +113,10 @@ function BotsSetup() {
       sessionStorage.setItem("gameConfig", JSON.stringify(currentConfig));
 
       navigate(`/play-mode/bots/game/${gameId}`, {
-        state: { 
-          gameId, 
+        state: {
+          gameId,
           playerBoard: board,
-          gameConfig: currentConfig
+          gameConfig: currentConfig,
         },
       });
     } catch (error) {
@@ -148,15 +150,17 @@ function BotsSetup() {
                 }`}
                 onClick={() => setDifficulty("intelligent")}
               >
-                <div className="difficulty-icon">🔥</div>
-                <span>Hard</span>
+                <div className="difficulty-icon">🧠</div>
+                <span>Media</span>
               </div>
               <div
-                className={`difficulty-option ${difficulty === "probabilistic" ? "active" : ""}`}
+                className={`difficulty-option ${
+                  difficulty === "probabilistic" ? "active" : ""
+                }`}
                 onClick={() => setDifficulty("probabilistic")}
               >
-                <div className="difficulty-icon">🧠</div>
-                <span>Pro</span>
+                <div className="difficulty-icon">🔥</div>
+                <span>Alta</span>
               </div>
             </div>
           </div>
@@ -166,7 +170,9 @@ function BotsSetup() {
             <label className="size-label">Tamaño del juego</label>
             <div className="size-options">
               <div
-                className={`size-option ${gameSize === "small" ? "active" : ""}`}
+                className={`size-option ${
+                  gameSize === "small" ? "active" : ""
+                }`}
                 onClick={() => setGameSize("small")}
               >
                 <div className="size-icon">🎯</div>
@@ -174,7 +180,9 @@ function BotsSetup() {
                 <small>6x6</small>
               </div>
               <div
-                className={`size-option ${gameSize === "normal" ? "active" : ""}`}
+                className={`size-option ${
+                  gameSize === "normal" ? "active" : ""
+                }`}
                 onClick={() => setGameSize("normal")}
               >
                 <div className="size-icon">⚓</div>
@@ -182,7 +190,9 @@ function BotsSetup() {
                 <small>10x10</small>
               </div>
               <div
-                className={`size-option ${gameSize === "large" ? "active" : ""}`}
+                className={`size-option ${
+                  gameSize === "large" ? "active" : ""
+                }`}
                 onClick={() => setGameSize("large")}
               >
                 <div className="size-icon">🚢</div>
@@ -203,8 +213,8 @@ function BotsSetup() {
         </p>
       </div>
 
-      <Setup 
-        onConfirm={handleConfirm} 
+      <Setup
+        onConfirm={handleConfirm}
         gameConfig={currentConfig}
         boardSize={currentConfig.boardSize}
         key={`setup-${gameSize}-${currentConfig.boardSize}`}

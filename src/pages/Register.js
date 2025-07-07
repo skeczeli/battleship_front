@@ -115,13 +115,15 @@ function Register() {
   return (
     <>
       {error && <div className="floating-message error-floating">{error}</div>}
-      {message && <div className="floating-message success-floating">{message}</div>}
+      {message && (
+        <div className="floating-message success-floating">{message}</div>
+      )}
 
       <div className="profile-container">
         <h1>Register</h1>
         <form onSubmit={handleSubmit} className="profile-form">
           <label>
-            Username:
+            Usuario:
             <input
               type="text"
               name="username"
@@ -132,7 +134,7 @@ function Register() {
           </label>
 
           <label>
-            Name:
+            Nombre:
             <input
               type="text"
               name="name"
@@ -154,7 +156,7 @@ function Register() {
           </label>
 
           <label>
-            Password:
+            Contraseña:
             <input
               type="password"
               name="password"
@@ -165,7 +167,7 @@ function Register() {
           </label>
 
           <label>
-            Confirm Password:
+            Confirmar constraseña:
             <input
               type="password"
               name="confirmPassword"
@@ -175,9 +177,9 @@ function Register() {
             />
           </label>
 
-          <button type="submit">Register</button>
+          <button type="submit">Registrarse</button>
           <p className="auth-link">
-            Already have an account? <Link to="/login">Log in here</Link>
+            ¿Ya tienes una cuenta? <Link to="/login">Inicia sesión aquí</Link>
           </p>
         </form>
       </div>

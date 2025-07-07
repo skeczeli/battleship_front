@@ -4,7 +4,6 @@ import "../styles/register.css";
 const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
-    
     username: "",
     name: "",
     email: "",
@@ -13,7 +12,6 @@ const UserProfile = () => {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
@@ -126,8 +124,10 @@ const UserProfile = () => {
     <>
       {/* Mensajes flotantes hermosos */}
       {error && <div className="floating-message error-floating">{error}</div>}
-      {success && <div className="floating-message success-floating">{success}</div>}
-      
+      {success && (
+        <div className="floating-message success-floating">{success}</div>
+      )}
+
       <div className="profile-container">
         <h2>Editar Perfil</h2>
         <form className="profile-form" onSubmit={handleSubmit}>
@@ -152,7 +152,7 @@ const UserProfile = () => {
             />
           </label>
           <label>
-            New Password:
+            Nueva contraseña:
             <input
               type="password"
               name="password"
@@ -162,7 +162,7 @@ const UserProfile = () => {
             />
           </label>
           <label>
-            Confirm Password:
+            Confirmar contraseña:
             <input
               type="password"
               name="confirmPassword"
