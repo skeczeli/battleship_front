@@ -483,11 +483,12 @@ form p a:hover {
 }
 
 .delete-form p {
-  color: #374151;
+  color: #1f2937;
   font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 20px;
+  font-size: 17px;
+  margin-bottom: 25px;
   text-align: center;
+  line-height: 1.4;
 }
 
 .delete-form input {
@@ -529,6 +530,7 @@ form p a:hover {
   transition: all 0.3s ease;
   box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
   margin-top: 10px;
+  margin-bottom: 15px;
 }
 
 .confirm-delete-button:hover {
@@ -540,6 +542,28 @@ form p a:hover {
 .confirm-delete-button:active {
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(255, 71, 87, 0.3);
+}
+
+/* Botón cancelar mejorado */
+.delete-form .form-button:not(.delete-button):not(.confirm-delete-button) {
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(100, 116, 139, 0.2);
+  margin: 0;
+}
+
+.delete-form .form-button:not(.delete-button):not(.confirm-delete-button):hover {
+  background: linear-gradient(135deg, #475569, #334155);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(100, 116, 139, 0.3);
 }
 
 /* Animación de entrada del popup */
@@ -604,6 +628,11 @@ form p a:hover {
     padding: 12px 20px;
     font-size: 15px;
   }
+  
+  .delete-form .form-button:not(.delete-button):not(.confirm-delete-button) {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
 }
 
 /* ===== ENLACES DE AUTENTICACIÓN HERMOSOS ===== */
@@ -651,4 +680,4 @@ form p a:hover {
 
 .auth-link a:hover::before {
   width: 100%;
-} 
+}

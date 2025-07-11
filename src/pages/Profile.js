@@ -13,6 +13,9 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("general");
+  const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const [deleteUsername, setDeleteUsername] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
 
   const getCategoryInfo = (points) => {
     if (points >= 1000) return { name: "Diamante" };
@@ -51,30 +54,31 @@ const Profile = () => {
           setIsFollowing(data.isFollowing);
         }
       } catch (err) {
-        setError("Error loading profile");
+        setError("Error al cargar el perfil");
       }
     };
 
     fetchProfile();
   }, [username]);
 
-  // Auto-ocultar mensajes después de 5 segundos
+  // Auto-ocultar mensajes después de 3 segundos
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(""), 5000);
+      const timer = setTimeout(() => setError(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [error]);
 
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(""), 5000);
+      const timer = setTimeout(() => setSuccess(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [success]);
 
   const handleFollow = async () => {
     if (!currentUser) {
+      setSuccess("");
       setError("Inicia sesión para seguir a otros usuarios.");
       return;
     }
@@ -84,6 +88,7 @@ const Profile = () => {
 
     if (!token) {
       console.error("No hay token en localStorage"); // Debug
+      setSuccess("");
       setError("Tu sesión ha expirado. Inicia sesión nuevamente.");
       return;
     }
@@ -116,6 +121,7 @@ const Profile = () => {
       if (!res.ok) {
         const errorData = await res.text();
         console.error("Error del servidor:", errorData); // Debug
+        setSuccess("");
         setError("Error: " + errorData);
         return;
       }
@@ -137,6 +143,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error al procesar seguimiento:", error);
+      setSuccess("");
       setError("Error de conexión: " + error.message);
     } finally {
       setIsLoading(false);
@@ -144,11 +151,11 @@ const Profile = () => {
   };
 
   const handleDelete = async () => {
-    // hacer modals!!!
-    const usernameInput = prompt("Escribí tu nombre de usuario:");
-    const passwordInput = prompt("Escribí tu contraseña:");
-
-    if (!usernameInput || !passwordInput) return;
+    if (!deleteUsername || !deletePassword) {
+      setSuccess("");
+      setError("Completá tu nombre de usuario y contraseña.");
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:8080/api/delete-account", {
@@ -157,22 +164,25 @@ const Profile = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: usernameInput,
-          password: passwordInput,
+          username: deleteUsername,
+          password: deletePassword,
         }),
       });
 
       if (!res.ok) {
         const errorData = await res.text();
+        setSuccess("");
         setError(errorData || "No se pudo eliminar la cuenta.");
         return;
       }
 
+      setError("");
       setSuccess("Cuenta eliminada correctamente.");
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-      window.location.href = "/";
+      setTimeout(() => (window.location.href = "/"), 2000);
     } catch (error) {
+      setSuccess("");
       setError("Error al conectar con el servidor.");
       console.error(error);
     }
@@ -217,7 +227,6 @@ const Profile = () => {
             }`}
             onClick={() => {
               console.log("activeTab es:", activeTab);
-
               setActiveTab("estadisticas");
             }}
           >
@@ -260,12 +269,39 @@ const Profile = () => {
                   >
                     Editar perfil
                   </button>
-                  <button
-                    className="form-button delete-button"
-                    onClick={handleDelete}
-                  >
-                    Eliminar cuenta
-                  </button>
+                  {showDeleteForm ? (
+                    <div className="delete-form">
+                      <p>Confirmá tu identidad para eliminar la cuenta:</p>
+                      <input
+                        type="text"
+                        placeholder="Usuario"
+                        value={deleteUsername}
+                        onChange={(e) => setDeleteUsername(e.target.value)}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                      />
+                      <button className="confirm-delete-button" onClick={handleDelete}>
+                        Confirmar eliminación
+                      </button>
+                      <button
+                        className="form-button"
+                        onClick={() => setShowDeleteForm(false)}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="form-button delete-button"
+                      onClick={() => setShowDeleteForm(true)}
+                    >
+                      Eliminar cuenta
+                    </button>
+                  )}
                 </>
               ) : (
                 <button
