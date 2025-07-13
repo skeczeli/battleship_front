@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
-// Cargar Font Awesome ANTES de las importaciones
+// Cargar Font Awesome
 const loadFontAwesome = () => {
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -12,21 +13,17 @@ const loadFontAwesome = () => {
   link.crossOrigin = 'anonymous';
   document.head.appendChild(link);
 };
-
-// Ejecutar inmediatamente
 loadFontAwesome();
 
-// Tus importaciones normales
-
-
+// Crear root solo una vez
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <GoogleOAuthProvider clientId="409016241894-8m0djdn0pqcqeis8jb2q4p3o303pnbjc.apps.googleusercontent.com">
+      <App />
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// Medición opcional
 reportWebVitals();

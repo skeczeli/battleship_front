@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { setPlayerId } from "services/PlayerService";
 import { useUser } from "contexts/UserContext";
+import { GoogleLogin } from "@react-oauth/google";
 import "styles/register.css";
 
 function Login() {
@@ -91,9 +92,35 @@ function Login() {
     }
   };
 
-  return (
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse.credential;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/google-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (response.ok) {
+        const { user, token } = await response.json();
+        login(user, token);
+        setPlayerId(user.username, false);
+        navigate("/");
+      } else {
+        const errorData = await response.text();
+        setError(errorData || "Error en login con Google");
+      }
+    } catch (err) {
+      console.error("Error en login con Google:", err);
+      setError("No se pudo conectar al servidor: " + err.message);
+    }
+  };
+
+ return (
     <>
-      {/* Mensaje flotante hermoso */}
       {error && <div className="floating-message error-floating">{error}</div>}
 
       <div className="profile-container">
@@ -126,6 +153,14 @@ function Login() {
             ¿No tienes una cuenta? <Link to="/register">Registrate aquí</Link>
           </p>
         </form>
+
+        <div style={{ marginTop: "20px", textAlign: "center" }}>
+          <p>O iniciá sesión con Google:</p>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Falló el login con Google")}
+          />
+        </div>
       </div>
     </>
   );
