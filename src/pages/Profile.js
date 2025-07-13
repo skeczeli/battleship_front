@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Statistics from "../components/Statistics";
 import "styles/register.css";
 import "styles/statistics.css";
@@ -7,7 +7,6 @@ import "styles/statistics.css";
 const Profile = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const { username } = useParams();
-  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState("");
@@ -160,10 +159,13 @@ const Profile = () => {
     }
 
     try {
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_BASE_URL}/api/delete-account`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           username: deleteUsername,
@@ -178,8 +180,11 @@ const Profile = () => {
         return;
       }
 
-      sessionStorage.setItem("deleteSuccess", "Cuenta eliminada correctamente.");
-      
+      sessionStorage.setItem(
+        "deleteSuccess",
+        "Cuenta eliminada correctamente."
+      );
+
       // Limpiar TODA la información de sesión
       localStorage.removeItem("user");
       localStorage.removeItem("token");
@@ -188,15 +193,14 @@ const Profile = () => {
       localStorage.removeItem("gameConfig");
       localStorage.removeItem("isFirstPlayer");
       localStorage.removeItem("joinedAlready");
-      
+
       // Limpiar también sessionStorage (excepto nuestro mensaje)
       const deleteMessage = sessionStorage.getItem("deleteSuccess");
       sessionStorage.clear();
       sessionStorage.setItem("deleteSuccess", deleteMessage);
-      
+
       // Forzar recarga completa de la página para reset total
       window.location.href = "/";
-      
     } catch (error) {
       setSuccess("");
       setError("Error al conectar con el servidor.");
