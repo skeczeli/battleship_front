@@ -108,100 +108,107 @@ function Setup({
   const totalShips = gameConfig?.totalShips || ships.length;
 
   const handleRandomPlacement = () => {
-  const newBoard = Array(boardSize)
-    .fill(null)
-    .map(() => Array(boardSize).fill(null));
-  const newPlacedShips = [];
+    const newBoard = Array(boardSize)
+      .fill(null)
+      .map(() => Array(boardSize).fill(null));
+    const newPlacedShips = [];
 
-  const penalizeCorners = (row, col) => {
-    const edge = row === 0 || col === 0 || row === boardSize - 1 || col === boardSize - 1;
-    const corner = (row === 0 || row === boardSize - 1) && (col === 0 || col === boardSize - 1);
-    return corner ? 0.2 : edge ? 0.5 : 1; // penalización
-  };
+    const penalizeCorners = (row, col) => {
+      const edge =
+        row === 0 ||
+        col === 0 ||
+        row === boardSize - 1 ||
+        col === boardSize - 1;
+      const corner =
+        (row === 0 || row === boardSize - 1) &&
+        (col === 0 || col === boardSize - 1);
+      return corner ? 0.2 : edge ? 0.5 : 1; // penalización
+    };
 
-  const isAdjacentOccupied = (board, row, col) => {
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        const r = row + dr;
-        const c = col + dc;
-        if (
-          r >= 0 &&
-          r < boardSize &&
-          c >= 0 &&
-          c < boardSize &&
-          board[r][c] !== null
-        ) {
-          return true;
+    const isAdjacentOccupied = (board, row, col) => {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = row + dr;
+          const c = col + dc;
+          if (
+            r >= 0 &&
+            r < boardSize &&
+            c >= 0 &&
+            c < boardSize &&
+            board[r][c] !== null
+          ) {
+            return true;
+          }
         }
       }
-    }
-    return false;
-  };
+      return false;
+    };
 
-  const canPlaceShip = (board, row, col, size, orientation) => {
-    const isHorizontal = orientation === "horizontal";
+    const canPlaceShip = (board, row, col, size, orientation) => {
+      const isHorizontal = orientation === "horizontal";
 
-    if (isHorizontal && col + size > boardSize) return false;
-    if (!isHorizontal && row + size > boardSize) return false;
+      if (isHorizontal && col + size > boardSize) return false;
+      if (!isHorizontal && row + size > boardSize) return false;
 
-    for (let i = 0; i < size; i++) {
-      const checkRow = isHorizontal ? row : row + i;
-      const checkCol = isHorizontal ? col + i : col;
+      for (let i = 0; i < size; i++) {
+        const checkRow = isHorizontal ? row : row + i;
+        const checkCol = isHorizontal ? col + i : col;
 
-      if (
-        board[checkRow][checkCol] !== null ||
-        isAdjacentOccupied(board, checkRow, checkCol)
-      )
-        return false;
-    }
+        if (
+          board[checkRow][checkCol] !== null ||
+          isAdjacentOccupied(board, checkRow, checkCol)
+        )
+          return false;
+      }
 
-    return true;
-  };
+      return true;
+    };
 
-  const placeShip = (board, ship, row, col, orientation) => {
-    const isHorizontal = orientation === "horizontal";
+    const placeShip = (board, ship, row, col, orientation) => {
+      const isHorizontal = orientation === "horizontal";
 
-    for (let i = 0; i < ship.size; i++) {
-      const placeRow = isHorizontal ? row : row + i;
-      const placeCol = isHorizontal ? col + i : col;
-      board[placeRow][placeCol] = ship.id;
-    }
-  };
+      for (let i = 0; i < ship.size; i++) {
+        const placeRow = isHorizontal ? row : row + i;
+        const placeCol = isHorizontal ? col + i : col;
+        board[placeRow][placeCol] = ship.id;
+      }
+    };
 
-  for (const ship of ships) {
-    let placed = false;
-    let attempts = 0;
-    const maxAttempts = 200;
+    for (const ship of ships) {
+      let placed = false;
+      let attempts = 0;
+      const maxAttempts = 200;
 
-    while (!placed && attempts < maxAttempts) {
-      const orientation = Math.random() < 0.5 ? "horizontal" : "vertical";
-      const row = Math.floor(Math.random() * boardSize);
-      const col = Math.floor(Math.random() * boardSize);
+      while (!placed && attempts < maxAttempts) {
+        const orientation = Math.random() < 0.5 ? "horizontal" : "vertical";
+        const row = Math.floor(Math.random() * boardSize);
+        const col = Math.floor(Math.random() * boardSize);
 
-      const chance = penalizeCorners(row, col);
-      if (Math.random() > chance) {
+        const chance = penalizeCorners(row, col);
+        if (Math.random() > chance) {
+          attempts++;
+          continue; // evitar esquinas o bordes en la mayoría de los casos
+        }
+
+        if (canPlaceShip(newBoard, row, col, ship.size, orientation)) {
+          placeShip(newBoard, ship, row, col, orientation);
+          newPlacedShips.push(ship.id);
+          placed = true;
+        }
         attempts++;
-        continue; // evitar esquinas o bordes en la mayoría de los casos
       }
 
-      if (canPlaceShip(newBoard, row, col, ship.size, orientation)) {
-        placeShip(newBoard, ship, row, col, orientation);
-        newPlacedShips.push(ship.id);
-        placed = true;
+      if (!placed) {
+        alert(
+          "No se pudieron colocar todos los barcos automáticamente. Intenta de nuevo."
+        );
+        return;
       }
-      attempts++;
     }
 
-    if (!placed) {
-      alert("No se pudieron colocar todos los barcos automáticamente. Intenta de nuevo.");
-      return;
-    }
-  }
-
-  setBoard(newBoard);
-  setPlacedShips(newPlacedShips);
-};
-
+    setBoard(newBoard);
+    setPlacedShips(newPlacedShips);
+  };
 
   return (
     <div className="setup-container">
@@ -218,9 +225,15 @@ function Setup({
             Orientación:{" "}
             {orientation === "horizontal" ? "Horizontal" : "Vertical"}
           </button>
-          <button onClick={resetBoard}>Reiniciar</button>
 
-          <button onClick={handleRandomPlacement}>Colocar al azar</button>
+          <button
+            style={{ backgroundColor: "#FFA500" }}
+            onClick={handleRandomPlacement}
+          >
+            Colocar al azar
+          </button>
+
+          <button onClick={resetBoard}>Reiniciar</button>
 
           {/* Input para unirse a partida (solo en multiplayer) */}
           {showJoinOption && (

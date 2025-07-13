@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useUser } from "../contexts/UserContext";
 
 const Statistics = ({ username, profile }) => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const { user } = useUser(); // Usar el UserContext
   const [gameHistory, setGameHistory] = useState([]);
   const [loadingGames, setLoadingGames] = useState(false);
@@ -25,12 +26,9 @@ const Statistics = ({ username, profile }) => {
 
       console.log("Iniciando fetch de historial de juegos para:", username);
 
-      const res = await fetch(
-        `http://localhost:8080/api/users/${username}/games`,
-        {
-          headers,
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/users/${username}/games`, {
+        headers,
+      });
 
       console.log("Respuesta recibida:", res);
       if (!res.ok) throw new Error("Could not load game history");

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/register.css";
 
 const UserProfile = () => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     username: "",
@@ -78,7 +79,7 @@ const UserProfile = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/update", {
+      const response = await fetch(`${API_BASE_URL}/api/users/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

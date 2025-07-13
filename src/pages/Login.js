@@ -5,6 +5,9 @@ import { useUser } from "contexts/UserContext";
 import "styles/register.css";
 
 function Login() {
+  // CAMBIO: Usar la variable de entorno correcta
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const { login } = useUser();
   const navigate = useNavigate();
   const [error, setError] = useState("");
@@ -38,22 +41,29 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log("Intentando login con API_BASE_URL:", API_BASE_URL); // Debug
+
     try {
-      const response = await fetch("http://localhost:8080/login", {
+      // CAMBIO: Usar la URL correcta con /api prefix
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(formData),
       });
+
+      console.log("Response status:", response.status); // Debug
+      console.log("Response ok:", response.ok); // Debug
 
       if (response.ok) {
         const user = await response.json();
         const authHeader = response.headers.get("Authorization");
-
         const token = authHeader?.replace("Bearer ", "");
 
         if (!token) {
           console.error("No se pudo extraer el token");
-          setError("Authentication failed");
+          setError("Authentication failed - no token received");
           return;
         }
 
@@ -72,11 +82,12 @@ function Login() {
         navigate("/");
       } else {
         const errorData = await response.text();
+        console.error("Error response:", errorData); // Debug
         setError(errorData || "Authentication error");
       }
     } catch (err) {
       console.error("Error en login:", err);
-      setError("Could not connect to server");
+      setError("Could not connect to server: " + err.message);
     }
   };
 
@@ -87,6 +98,7 @@ function Login() {
 
       <div className="profile-container">
         <h1>Iniciar sesión</h1>
+
         <form onSubmit={handleSubmit} className="profile-form">
           <label htmlFor="username">Usuario:</label>
           <input
@@ -97,6 +109,7 @@ function Login() {
             onChange={handleChange}
             required
           />
+
           <label htmlFor="password">Contraseña:</label>
           <input
             type="password"
@@ -106,7 +119,9 @@ function Login() {
             onChange={handleChange}
             required
           />
+
           <button type="submit">Iniciar Sesión</button>
+
           <p className="auth-link">
             ¿No tienes una cuenta? <Link to="/register">Registrate aquí</Link>
           </p>

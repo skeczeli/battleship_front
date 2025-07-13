@@ -9,6 +9,8 @@ import "App.css";
 import { useLocation } from "react-router-dom";
 
 function BotsSetup() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const navigate = useNavigate();
   const { user, playerId } = useUser();
   const location = useLocation();
@@ -91,7 +93,7 @@ function BotsSetup() {
     const numericBoard = mapBoardToIntegers(board);
 
     try {
-      const response = await fetch("http://localhost:8080/api/game/setup/bot", {
+      const response = await fetch(`${API_BASE_URL}/api/game/setup/bot`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -4,6 +4,8 @@ import { useUser } from "../../contexts/UserContext";
 import "styles/ranking.css";
 
 const FriendsRanking = () => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const [rankingData, setRankingData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ const FriendsRanking = () => {
         }
 
         const response = await fetch(
-          "http://localhost:8080/api/follow/friends-ranking",
+          `${API_BASE_URL}/api/follow/friends-ranking`,
           {
             headers: {
               Authorization: `Bearer ${user.token}`,

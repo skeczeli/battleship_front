@@ -54,6 +54,7 @@ const gameConfigs = {
 };
 
 function RandomUserSetup() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const navigate = useNavigate();
   const { user, playerId } = useUser();
   const [gameSize, setGameSize] = useState("normal");
@@ -87,7 +88,7 @@ function RandomUserSetup() {
 
     try {
       const waitingResponse = await fetch(
-        `http://localhost:8080/api/game/waiting/private?boardSize=${currentConfig.boardSize}&passkey=${passkey}`
+        `${API_BASE_URL}/api/game/waiting/private?boardSize=${currentConfig.boardSize}&passkey=${passkey}`
       );
       const waitingData = await waitingResponse.json();
 
