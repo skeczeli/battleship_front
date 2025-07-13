@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Statistics from "../components/Statistics";
 import "styles/register.css";
 import "styles/statistics.css";
@@ -7,6 +7,7 @@ import "styles/statistics.css";
 const Profile = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const { username } = useParams();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState("");
@@ -177,11 +178,25 @@ const Profile = () => {
         return;
       }
 
-      setError("");
-      setSuccess("Cuenta eliminada correctamente.");
+      sessionStorage.setItem("deleteSuccess", "Cuenta eliminada correctamente.");
+      
+      // Limpiar TODA la información de sesión
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-      setTimeout(() => (window.location.href = "/"), 2000);
+      localStorage.removeItem("playerId");
+      localStorage.removeItem("sessionId");
+      localStorage.removeItem("gameConfig");
+      localStorage.removeItem("isFirstPlayer");
+      localStorage.removeItem("joinedAlready");
+      
+      // Limpiar también sessionStorage (excepto nuestro mensaje)
+      const deleteMessage = sessionStorage.getItem("deleteSuccess");
+      sessionStorage.clear();
+      sessionStorage.setItem("deleteSuccess", deleteMessage);
+      
+      // Forzar recarga completa de la página para reset total
+      window.location.href = "/";
+      
     } catch (error) {
       setSuccess("");
       setError("Error al conectar con el servidor.");
