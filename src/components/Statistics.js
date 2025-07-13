@@ -1,46 +1,27 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
 const Statistics = ({ username, profile }) => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-  const { user } = useUser(); // Usar el UserContext
+  const { user } = useUser();
   const [gameHistory, setGameHistory] = useState([]);
   const [loadingGames, setLoadingGames] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    console.log("Componente Statistics montado");
-  }, []);
+  const navigate = useNavigate();
 
   const fetchGameHistory = useCallback(async () => {
     setLoadingGames(true);
     try {
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      // Usar el token del UserContext si existe
-      if (user && user.token) {
-        headers["Authorization"] = `Bearer ${user.token}`;
-      }
-
-      console.log("Iniciando fetch de historial de juegos para:", username);
+      const headers = { "Content-Type": "application/json" };
+      if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
 
       const res = await fetch(`${API_BASE_URL}/api/users/${username}/games`, {
         headers,
       });
-
-      console.log("Respuesta recibida:", res);
       if (!res.ok) throw new Error("Could not load game history");
       const data = await res.json();
-      console.log("Historial de juegos recibido:", data);
-
       setGameHistory(data);
-      data.forEach((game, i) => {
-        console.log(
-          `Juego ${i + 1}: sessionId = ${game.sessionId}, id = ${game.id}`
-        );
-      });
     } catch (err) {
       setError("Error cargando historial de juegos");
     } finally {
@@ -63,10 +44,7 @@ const Statistics = ({ username, profile }) => {
     });
   };
 
-  const getGameStatus = (startTime, endTime) => {
-    if (!endTime) return "Activa";
-    return "Finalizada";
-  };
+  const getGameStatus = (start, end) => (!end ? "Activa" : "Finalizada");
 
   const goToGame = (game) => {
     if (!game.sessionId) return;
@@ -74,18 +52,14 @@ const Statistics = ({ username, profile }) => {
       game.opponent === "BOT"
         ? `/play-mode/bots/game/${game.sessionId}`
         : `/play-mode/random/game/${game.sessionId}`;
-    window.location.href = path;
+    navigate(path);
   };
 
-  // Verificar si el usuario actual puede ver el juego
-  const canViewGame = (game) => {
-    // Solo puede ver el juego si el usuario logueado coincide con el username del perfil
-    return user && user.username === username && game.sessionId;
-  };
+  const canViewGame = (game) =>
+    user && user.username === username && game.sessionId;
 
-  // Calcular estadísticas
   const totalGames = gameHistory.filter(
-    (game) => game.result && game.status === "Finalizada"
+    (g) => g.result && g.status === "Finalizada"
   ).length;
   const winRate =
     totalGames > 0 ? ((profile.wins / totalGames) * 100).toFixed(1) : 0;
@@ -94,31 +68,31 @@ const Statistics = ({ username, profile }) => {
       ? ((totalGames / gameHistory.length) * 100).toFixed(1)
       : 0;
   const realOpponentCount = gameHistory.filter(
-    (game) => game.opponent && game.opponent !== "BOT"
+    (g) => g.opponent && g.opponent !== "BOT"
   ).length;
   const realOpponentRate =
     gameHistory.length > 0
       ? ((realOpponentCount / gameHistory.length) * 100).toFixed(1)
       : 0;
   const gameAverageTime =
-    gameHistory.reduce((total, game) => {
-      if (game.startTime && game.endTime) {
-        const start = new Date(game.startTime);
-        const end = new Date(game.endTime);
-        return total + (end - start);
+    gameHistory.reduce((total, g) => {
+      if (g.startTime && g.endTime) {
+        return total + (new Date(g.endTime) - new Date(g.startTime));
       }
       return total;
     }, 0) / gameHistory.length;
-  const totalMs = gameAverageTime;
-  const minutes = Math.floor(totalMs / 60000);
-  const seconds = Math.round((totalMs % 60000) / 1000);
 
-  const formatted = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  const formatted =
+    gameAverageTime && !isNaN(gameAverageTime)
+      ? `${Math.floor(gameAverageTime / 60000)}:${Math.round(
+          (gameAverageTime % 60000) / 1000
+        )
+          .toString()
+          .padStart(2, "0")}`
+      : "N/A";
 
-  const boardSizesCount = gameHistory.reduce((acc, game) => {
-    if (game.boardSize) {
-      acc[game.boardSize] = (acc[game.boardSize] || 0) + 1;
-    }
+  const boardSizesCount = gameHistory.reduce((acc, g) => {
+    if (g.boardSize) acc[g.boardSize] = (acc[g.boardSize] || 0) + 1;
     return acc;
   }, {});
   const mostCommonBoardSize = Object.entries(boardSizesCount).reduce(
@@ -168,9 +142,7 @@ const Statistics = ({ username, profile }) => {
       <h4>Promedios de juego</h4>
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-number">
-            {gameAverageTime ? formatted : "N/A"}
-          </div>
+          <div className="stat-number">{formatted}</div>
           <div className="stat-label">Tiempo promedio por juego</div>
         </div>
         <div className="stat-card">
@@ -181,7 +153,6 @@ const Statistics = ({ username, profile }) => {
 
       <h3>Historial de Juegos</h3>
       {error && <div className="error-message">{error}</div>}
-
       {loadingGames ? (
         <div className="loading-state">
           <div className="spinner"></div>

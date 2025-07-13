@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+
 import Statistics from "../components/Statistics";
 import "styles/register.css";
 import "styles/statistics.css";
 
 const Profile = () => {
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+  const navigate = useNavigate();
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -267,7 +269,7 @@ const Profile = () => {
                 <>
                   <button
                     className="form-button"
-                    onClick={() => (window.location.href = "/editprofile")}
+                    onClick={() => navigate("/editprofile")}
                   >
                     Editar perfil
                   </button>
