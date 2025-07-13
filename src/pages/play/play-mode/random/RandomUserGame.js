@@ -8,6 +8,8 @@ import "styles/game.css";
 import "styles/enhanced-board.css";
 
 function RandomUserGame() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const location = useLocation();
   const { gameId } = useParams();
   const { user, playerId, isReady } = useUser();
@@ -185,9 +187,7 @@ function RandomUserGame() {
 
   const resume = () => {
     console.log("🟢 Ejecutando resume()");
-    fetch(
-      `http://localhost:8080/api/game/resume/multiplayer/${gameId}/${playerId}`
-    )
+    fetch(`${API_BASE_URL}/api/game/resume/multiplayer/${gameId}/${playerId}`)
       .then((res) => {
         if (!res.ok && !res.status === "bad_request")
           throw new Error("No se encontró la partida");
@@ -239,7 +239,7 @@ function RandomUserGame() {
     if (!isReady || !gameId || !playerId || stompInitialized.current) return;
     stompInitialized.current = true;
 
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,

@@ -8,6 +8,8 @@ import "styles/game.css";
 import "styles/enhanced-board.css";
 
 function BotsGame() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const { gameId } = useParams();
   const { user, playerId, isReady } = useUser();
   const navigate = useNavigate();
@@ -155,7 +157,7 @@ function BotsGame() {
     stompInitialized.current = true;
     console.log(`Conectando al juego ${gameId} como jugador ${playerId}`);
 
-    socket.current = new SockJS("http://localhost:8080/ws");
+    socket.current = new SockJS(`${API_BASE_URL}/ws`);
     const client = new Client({
       webSocketFactory: () => socket.current,
       reconnectDelay: 5000,
@@ -170,7 +172,7 @@ function BotsGame() {
       });
 
       // Hacer el fetch después de establecer conexión WebSocket
-      fetch(`http://localhost:8080/api/game/resume/${gameId}/${playerId}`)
+      fetch(`${API_BASE_URL}/api/game/resume/${gameId}/${playerId}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.error !== undefined) {

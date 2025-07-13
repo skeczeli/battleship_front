@@ -54,6 +54,8 @@ const gameConfigs = {
 };
 
 function RandomUserSetup() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const navigate = useNavigate();
   const { user, playerId } = useUser();
   const [gameSize, setGameSize] = useState("normal");
@@ -85,7 +87,7 @@ function RandomUserSetup() {
 
     try {
       const waitingResponse = await fetch(
-        `http://localhost:8080/api/game/waiting?boardSize=${currentConfig.boardSize}&matchByLevel=${matchByLevelString}&playerId=${playerId}`
+        `${API_BASE_URL}/api/game/waiting?boardSize=${currentConfig.boardSize}&matchByLevel=${matchByLevelString}&playerId=${playerId}`
       );
       const waitingData = await waitingResponse.json();
 
@@ -109,7 +111,7 @@ function RandomUserSetup() {
         });
       } else {
         const response = await fetch(
-          "http://localhost:8080/api/game/setup/multiplayer",
+          `${API_BASE_URL}/api/game/setup/multiplayer`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

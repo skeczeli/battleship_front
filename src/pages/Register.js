@@ -4,6 +4,7 @@ import { useUser } from "contexts/UserContext"; // ✅ agregado
 import "../styles/register.css";
 
 function Register() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const navigate = useNavigate();
   const { login } = useUser(); // ✅ movido aquí (fuera de handleSubmit)
   const [message, setMessage] = useState(null);
@@ -62,7 +63,7 @@ function Register() {
     };
 
     try {
-      const response = await fetch("http://localhost:8080/add", {
+      const response = await fetch(`${API_BASE_URL}/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +78,7 @@ function Register() {
         setMessage("¡Usuario registrado correctamente! 🎉");
 
         // ✅ login automático
-        const loginResponse = await fetch("http://localhost:8080/login", {
+        const loginResponse = await fetch(`${API_BASE_URL}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -4,6 +4,8 @@ import { useUser } from "contexts/UserContext";
 import "styles/ranking.css";
 
 const RankingTable = () => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
   const [rankingData, setRankingData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -24,7 +26,7 @@ const RankingTable = () => {
   useEffect(() => {
     const fetchRanking = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/ranking");
+        const response = await fetch(`${API_BASE_URL}/api/ranking`);
         const data = await response.json();
         setRankingData(data);
       } catch (error) {

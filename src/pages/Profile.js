@@ -5,6 +5,7 @@ import "styles/register.css";
 import "styles/statistics.css";
 
 const Profile = () => {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -41,7 +42,7 @@ const Profile = () => {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        const res = await fetch(`http://localhost:8080/api/users/${username}`, {
+        const res = await fetch(`${API_BASE_URL}/api/users/${username}`, {
           headers,
         });
 
@@ -99,12 +100,12 @@ const Profile = () => {
       const endpoint = isFollowing ? "unfollow" : "follow";
       console.log(
         "Enviando petición a:",
-        `http://localhost:8080/api/follow/${endpoint}`
+        `${API_BASE_URL}/api/follow/${endpoint}`
       ); // Debug
       console.log("Con token:", `Bearer ${token}`); // Debug
       console.log("Para usuario:", username); // Debug
 
-      const res = await fetch(`http://localhost:8080/api/follow/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/follow/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +159,7 @@ const Profile = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/delete-account", {
+      const res = await fetch(`${API_BASE_URL}/api/delete-account`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -200,7 +201,6 @@ const Profile = () => {
 
   const isCurrentUser =
     currentUser && currentUser.username === profile.username;
-  const totalGames = profile.wins + profile.losses;
 
   return (
     <>
@@ -284,7 +284,10 @@ const Profile = () => {
                         value={deletePassword}
                         onChange={(e) => setDeletePassword(e.target.value)}
                       />
-                      <button className="confirm-delete-button" onClick={handleDelete}>
+                      <button
+                        className="confirm-delete-button"
+                        onClick={handleDelete}
+                      >
                         Confirmar eliminación
                       </button>
                       <button

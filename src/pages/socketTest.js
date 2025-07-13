@@ -3,8 +3,9 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 function SocketTest() {
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
   useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
