@@ -428,8 +428,35 @@ function BotsGame() {
       {gameOver ? (
         <div className="game-over">
           <h3>
-            {winner ? "¡Felicidades! Has ganado" : "Has perdido esta vez"}
+            {winner ? "¡Felicidades! Has ganado! 🎉" : "Has perdido esta vez"}
           </h3>
+          {winner && (
+            <>
+              <span className="share-label">Compartir resultado:</span>
+              <div className="social-buttons">
+                <button
+                  className="social-button x-button"
+                  onClick={() => {
+                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Podés ganarme?`;
+                    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                    window.open(tweetUrl, "_blank");
+                  }}
+                  title="Compartir en X"
+                />
+
+                <button
+                  className="social-button whatsapp-button"
+                  onClick={() => {
+                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo?`;
+                    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                    window.open(whatsappUrl, "_blank");
+                  }}
+                  title="Compartir por WhatsApp"
+                />
+              </div>
+            </>
+          )}
+
           <button onClick={handleExitGame} className="exit-button">
             Salir
           </button>
