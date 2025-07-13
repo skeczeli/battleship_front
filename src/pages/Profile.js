@@ -15,8 +15,6 @@ const Profile = () => {
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("general");
   const [showDeleteForm, setShowDeleteForm] = useState(false);
-  const [deleteUsername, setDeleteUsername] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
 
   const getCategoryInfo = (points) => {
     if (points >= 1000) return { name: "Diamante" };
@@ -152,31 +150,24 @@ const Profile = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteUsername || !deletePassword) {
-      setSuccess("");
-      setError("Completá tu nombre de usuario y contraseña.");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setError("No estás autenticado.");
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
-
       const res = await fetch(`${API_BASE_URL}/api/delete-account`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          username: deleteUsername,
-          password: deletePassword,
-        }),
       });
 
       if (!res.ok) {
-        const errorData = await res.text();
-        setSuccess("");
-        setError(errorData || "No se pudo eliminar la cuenta.");
+        const msg = await res.text();
+        setError(msg || "No se pudo eliminar la cuenta.");
         return;
       }
 
@@ -185,26 +176,18 @@ const Profile = () => {
         "Cuenta eliminada correctamente."
       );
 
-      // Limpiar TODA la información de sesión
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("playerId");
-      localStorage.removeItem("sessionId");
-      localStorage.removeItem("gameConfig");
-      localStorage.removeItem("isFirstPlayer");
-      localStorage.removeItem("joinedAlready");
-
-      // Limpiar también sessionStorage (excepto nuestro mensaje)
-      const deleteMessage = sessionStorage.getItem("deleteSuccess");
+      // Limpiar sesión
+      localStorage.clear();
       sessionStorage.clear();
-      sessionStorage.setItem("deleteSuccess", deleteMessage);
+      sessionStorage.setItem(
+        "deleteSuccess",
+        "Cuenta eliminada correctamente."
+      );
 
-      // Forzar recarga completa de la página para reset total
       window.location.href = "/";
-    } catch (error) {
-      setSuccess("");
+    } catch (err) {
       setError("Error al conectar con el servidor.");
-      console.error(error);
+      console.error(err);
     }
   };
 
@@ -290,19 +273,10 @@ const Profile = () => {
                   </button>
                   {showDeleteForm ? (
                     <div className="delete-form">
-                      <p>Confirmá tu identidad para eliminar la cuenta:</p>
-                      <input
-                        type="text"
-                        placeholder="Usuario"
-                        value={deleteUsername}
-                        onChange={(e) => setDeleteUsername(e.target.value)}
-                      />
-                      <input
-                        type="password"
-                        placeholder="Contraseña"
-                        value={deletePassword}
-                        onChange={(e) => setDeletePassword(e.target.value)}
-                      />
+                      <p>
+                        ¿Estás segura de que querés eliminar tu cuenta? Esta
+                        acción es irreversible.
+                      </p>
                       <button
                         className="confirm-delete-button"
                         onClick={handleDelete}
