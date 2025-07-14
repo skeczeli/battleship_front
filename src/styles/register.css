@@ -269,7 +269,7 @@ form p a:hover {
   }
 }
 
-/* ===== MENSAJES FLOTANTES HERMOSOS ===== */
+/* ===== MENSAJES FLOTANTES HERMOSOS (SIN LÍNEA HORIZONTAL) ===== */
 .floating-message {
   position: fixed;
   top: 30px;
@@ -287,6 +287,7 @@ form p a:hover {
   backdrop-filter: blur(15px);
   border: 2px solid rgba(255, 255, 255, 0.3);
   animation: floatInBeautiful 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* ELIMINAMOS el ::after que creaba la línea horizontal */
 }
 
 /* Mensaje de error flotante */
@@ -372,28 +373,6 @@ form p a:hover {
 
 .success-floating:hover {
   box-shadow: 0 25px 60px rgba(46, 213, 115, 0.6);
-}
-
-/* Efecto de brillo que se mueve */
-.floating-message::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmerEffect 3s infinite;
-}
-
-@keyframes shimmerEffect {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
 }
 
 /* Responsive para móviles */
@@ -680,4 +659,284 @@ form p a:hover {
 
 .auth-link a:hover::before {
   width: 100%;
+}
+
+/* ===== ESTILOS PARA GOOGLE LOGIN ===== */
+
+/* Contenedor del Google Login */
+.google-login-container {
+  margin: 30px auto 0 auto;
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+  border-radius: 16px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Efecto de brillo sutil en el contenedor */
+.google-login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  animation: shimmerEffect 4s infinite;
+}
+
+/* Texto mejorado */
+.google-login-text {
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Separador visual opcional */
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 25px auto;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-divider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+}
+
+.login-divider span {
+  padding: 0 20px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.9));
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+}
+
+/* Contenedor del botón de Google */
+.google-button-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Estilos para el botón de Google Login de la librería */
+.google-login-container [data-testid="google-login-button"],
+.google-login-container iframe {
+  width: 100% !important;
+  max-width: 280px !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2) !important;
+  transition: all 0.3s ease !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Si el botón no se centra automáticamente, forzamos el centrado */
+.google-login-container > div {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* Efecto hover para el botón de Google */
+.google-login-container:hover [data-testid="google-login-button"],
+.google-login-container:hover iframe {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3) !important;
+}
+
+/* Botón personalizado de Google (por si quieres hacerlo custom) */
+.custom-google-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 280px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-google-button:hover {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.custom-google-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+/* Icono de Google */
+.google-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Texto del botón personalizado */
+.custom-google-button span {
+  letter-spacing: 0.5px;
+}
+
+/* Efecto de ondas en el botón personalizado */
+.custom-google-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.6s ease;
+}
+
+.custom-google-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .google-login-container {
+    margin-top: 20px;
+    padding: 20px 15px;
+    border-radius: 12px;
+  }
+
+  .google-login-text {
+    font-size: 15px;
+    margin-bottom: 15px;
+  }
+
+  .login-divider {
+    margin: 20px 0;
+  }
+
+  .login-divider span {
+    font-size: 13px;
+    padding: 0 15px;
+  }
+
+  .google-login-container [data-testid="google-login-button"],
+  .google-login-container iframe,
+  .custom-google-button {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .custom-google-button {
+    padding: 10px 20px;
+    font-size: 15px;
+  }
+
+  .google-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+  }
+}
+
+/* Animación de entrada para el contenedor */
+@keyframes googleLoginSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.google-login-container {
+  animation: googleLoginSlideIn 0.6s ease-out;
+}
+
+/* Efecto de pulso suave en el borde */
+.google-login-container::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 18px;
+  background: linear-gradient(45deg, 
+    transparent, 
+    rgba(59, 130, 246, 0.1), 
+    transparent, 
+    rgba(99, 102, 241, 0.1), 
+    transparent
+  );
+  z-index: -1;
+  animation: borderGlow 4s infinite;
+}
+
+@keyframes borderGlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Animación shimmer solo para el Google Login container */
+@keyframes shimmerEffect {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }

@@ -51,7 +51,7 @@ const UserProfile = () => {
     if (!user?.token) {
       // Limpiar mensajes anteriores
       setSuccess("");
-      setError("Invalid session. Please log in again.");
+      setError("Sesion invalida, porfavor iniciar sesion de nuevo.");
       return;
     }
 
@@ -60,7 +60,7 @@ const UserProfile = () => {
     if (formData.password && formData.password !== formData.confirmPassword) {
       // Limpiar mensajes anteriores
       setSuccess("");
-      setError("Passwords don't match.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -74,7 +74,7 @@ const UserProfile = () => {
     if (Object.keys(updates).length === 0) {
       // Limpiar mensajes anteriores
       setSuccess("");
-      setError("You didn't change anything.");
+      setError("No hay cambios por realizar.");
       return;
     }
 
@@ -95,7 +95,7 @@ const UserProfile = () => {
         localStorage.setItem("user", JSON.stringify(newUserData));
         // Limpiar mensajes anteriores
         setError("");
-        setSuccess("Data updated successfully.");
+        setSuccess("Datos actualizados correctamente.");
         setFormData({
           username: "",
           name: "",
@@ -104,15 +104,15 @@ const UserProfile = () => {
           confirmPassword: "",
         });
       } else {
-        // Limpiar mensajes anteriores
+        const errorText = await response.text();        
         setSuccess("");
-        setError("Error updating data.");
+        setError(errorText || "Error actualizando los datos.");
       }
     } catch (err) {
       console.error(err);
       // Limpiar mensajes anteriores
       setSuccess("");
-      setError("Network error.");
+      setError("Error de red.");
     }
   };
 

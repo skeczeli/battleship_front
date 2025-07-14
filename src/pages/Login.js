@@ -119,7 +119,7 @@ function Login() {
     }
   };
 
- return (
+  return (
     <>
       {error && <div className="floating-message error-floating">{error}</div>}
 
@@ -154,12 +154,24 @@ function Login() {
           </p>
         </form>
 
-        <div style={{ marginTop: "20px", textAlign: "center" }}>
-          <p>O iniciá sesión con Google:</p>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError("Falló el login con Google")}
-          />
+        {/* Separador visual mejorado */}
+        <div className="login-divider">
+          <span>O continuá con</span>
+        </div>
+
+        {/* Contenedor mejorado para Google Login */}
+        <div className="google-login-container">
+          <div className="google-button-wrapper">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Falló el login con Google")}
+              text="signin_with"
+              shape="rectangular"
+              size="large"
+              theme="outline"
+              width="280"
+            />
+          </div>
         </div>
       </div>
     </>
