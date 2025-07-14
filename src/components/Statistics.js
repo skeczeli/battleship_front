@@ -15,13 +15,20 @@ const Statistics = ({ username, profile }) => {
     try {
       const headers = { "Content-Type": "application/json" };
       if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
-
       const res = await fetch(`${API_BASE_URL}/api/users/${username}/games`, {
         headers,
       });
       if (!res.ok) throw new Error("Could not load game history");
       const data = await res.json();
-      setGameHistory(data);
+
+      // Ordenar de más reciente a más antiguo
+      const sortedData = data.sort((a, b) => {
+        const dateA = new Date(a.startTime || a.endTime || 0);
+        const dateB = new Date(b.startTime || b.endTime || 0);
+        return dateB - dateA; // Orden descendente (más reciente primero)
+      });
+
+      setGameHistory(sortedData);
     } catch (err) {
       setError("Error cargando historial de juegos");
     } finally {
@@ -61,19 +68,24 @@ const Statistics = ({ username, profile }) => {
   const totalGames = gameHistory.filter(
     (g) => g.result && g.status === "Finalizada"
   ).length;
+
   const winRate =
     totalGames > 0 ? ((profile.wins / totalGames) * 100).toFixed(1) : 0;
+
   const gameCompletionRate =
     gameHistory.length > 0
       ? ((totalGames / gameHistory.length) * 100).toFixed(1)
       : 0;
+
   const realOpponentCount = gameHistory.filter(
     (g) => g.opponent && g.opponent !== "BOT"
   ).length;
+
   const realOpponentRate =
     gameHistory.length > 0
       ? ((realOpponentCount / gameHistory.length) * 100).toFixed(1)
       : 0;
+
   const gameAverageTime =
     gameHistory.reduce((total, g) => {
       if (g.startTime && g.endTime) {
@@ -95,6 +107,7 @@ const Statistics = ({ username, profile }) => {
     if (g.boardSize) acc[g.boardSize] = (acc[g.boardSize] || 0) + 1;
     return acc;
   }, {});
+
   const mostCommonBoardSize = Object.entries(boardSizesCount).reduce(
     (a, b) => (a[1] > b[1] ? a : b),
     [null, 0]
@@ -150,7 +163,6 @@ const Statistics = ({ username, profile }) => {
           <div className="stat-label">Tamaño de tablero más común</div>
         </div>
       </div>
-
       <h3>Historial de Juegos</h3>
       {error && <div className="error-message">{error}</div>}
       {loadingGames ? (
