@@ -15,11 +15,25 @@ const Statistics = ({ username, profile }) => {
     try {
       const headers = { "Content-Type": "application/json" };
       if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
+
+      console.log(
+        "🔍 Haciendo petición a:",
+        `${API_BASE_URL}/api/users/${username}/games`
+      );
+
       const res = await fetch(`${API_BASE_URL}/api/users/${username}/games`, {
         headers,
       });
       if (!res.ok) throw new Error("Could not load game history");
       const data = await res.json();
+
+      // 🐛 DEBUG: Ver los datos crudos del backend
+      console.log("📦 Datos completos del backend:", data);
+      if (data.length > 0) {
+        console.log("📦 Primer juego completo:", data[0]);
+        console.log("📦 startTime crudo:", data[0].startTime);
+        console.log("📦 endTime crudo:", data[0].endTime);
+      }
 
       // Ordenar de más reciente a más antiguo
       const sortedData = data.sort((a, b) => {
@@ -31,6 +45,7 @@ const Statistics = ({ username, profile }) => {
       setGameHistory(sortedData);
     } catch (err) {
       setError("Error cargando historial de juegos");
+      console.error("❌ Error:", err);
     } finally {
       setLoadingGames(false);
     }
@@ -42,7 +57,13 @@ const Statistics = ({ username, profile }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("es-AR", {
+
+    // Solución: Agregar 'Z' para que JavaScript interprete como UTC
+    const utcDateString = dateString.endsWith("Z")
+      ? dateString
+      : dateString + "Z";
+
+    return new Date(utcDateString).toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires",
       year: "numeric",
       month: "2-digit",
