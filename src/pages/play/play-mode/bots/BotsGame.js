@@ -439,7 +439,7 @@ function BotsGame() {
                 <button
                   className="social-button x-button"
                   onClick={() => {
-                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
+                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship bot! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
                     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
                     window.open(tweetUrl, "_blank");
                   }}
@@ -449,7 +449,7 @@ function BotsGame() {
                 <button
                   className="social-button whatsapp-button"
                   onClick={() => {
-                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
+                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship bot! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
                     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
                     window.open(whatsappUrl, "_blank");
                   }}
