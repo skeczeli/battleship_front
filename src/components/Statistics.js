@@ -42,12 +42,14 @@ const Statistics = ({ username, profile }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("es-ES", {
+    return new Date(dateString).toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
     });
   };
 

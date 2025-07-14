@@ -154,9 +154,11 @@ function RandomUserGame() {
               data.senderId === playerId
                 ? user?.username || "Tú"
                 : opponentName,
-            timestamp: new Date().toLocaleTimeString([], {
+            timestamp: new Date().toLocaleTimeString("es-AR", {
+              timeZone: "America/Argentina/Buenos_Aires",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: false,
             }),
           };
           setChatMessages((prev) => [...prev, chatMessage]);
@@ -601,8 +603,12 @@ function RandomUserGame() {
                 <button
                   className="social-button x-button"
                   onClick={() => {
-                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
-                    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                    const text = `¡${
+                      user?.username || "Un jugador"
+                    } ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
+                    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                      text
+                    )}`;
                     window.open(tweetUrl, "_blank");
                   }}
                   title="Compartir en X"
@@ -611,8 +617,12 @@ function RandomUserGame() {
                 <button
                   className="social-button whatsapp-button"
                   onClick={() => {
-                    const text = `¡${user?.username || "Un jugador"} ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
-                    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                    const text = `¡${
+                      user?.username || "Un jugador"
+                    } ganó una partida de Battleship multijugador! 🚢🔥 ¿Te animás a intentarlo? https://battleship-front-57bd.onrender.com/`;
+                    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+                      text
+                    )}`;
                     window.open(whatsappUrl, "_blank");
                   }}
                   title="Compartir por WhatsApp"
@@ -630,7 +640,6 @@ function RandomUserGame() {
           Abandonar juego
         </button>
       )}
-
     </div>
   );
 }
