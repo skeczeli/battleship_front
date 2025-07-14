@@ -112,7 +112,7 @@ function RandomUserSetup() {
         });
       } else {
         const response = await fetch(
-          "http://localhost:8080/api/game/setup/multiplayer/private",
+          `${API_BASE_URL}/api/game/setup/multiplayer/private`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
